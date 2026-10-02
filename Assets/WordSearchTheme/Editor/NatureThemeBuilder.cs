@@ -151,6 +151,7 @@ public static partial class NatureThemeBuilder
             ti.wrapMode = TextureWrapMode.Clamp;
             ti.textureCompression = TextureImporterCompression.Uncompressed;
             ti.spritePixelsPerUnit = 100;
+            ti.maxTextureSize = 4096;
             ti.spriteBorder = Borders.TryGetValue(key, out Vector4 b) ? b : Vector4.zero;
 
             TextureImporterSettings s = new TextureImporterSettings();
@@ -468,8 +469,10 @@ public static partial class NatureThemeBuilder
         Image img = bg.GetComponent<Image>();
         if (img != null)
         {
-            img.sprite = null; // single-toned, classy off-white
-            img.color = OffWhite;
+            // soft off-white gradient with faint scattered letters (same warm tone)
+            Sprite letters = S("bg_letters");
+            img.sprite = letters;
+            img.color = letters != null ? Color.white : OffWhite;
             img.raycastTarget = false;
             img.preserveAspect = false;
         }
