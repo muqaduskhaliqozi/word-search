@@ -2224,7 +2224,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbe12c2feff78414a82ed203d985c3db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelCount: 16
+  levelCount: 25
   levelTitles:
   - LET'S EXPLORE
   - FRUITS
@@ -2234,13 +2234,22 @@ MonoBehaviour:
   - NATURE
   - OCEAN
   - FOREST
+  - KITCHEN
   - WEATHER
+  - FARM
   - BIRDS
+  - MUSIC
   - FLOWERS
   - BUGS
+  - SPORTS
   - GARDEN
+  - DESSERTS
   - MOUNTAINS
   - CAMPING
+  - TRAVEL
+  - SCHOOL
+  - JOBS
+  - HOUSE
   - SPACE
   gameSceneName: GamePlay
   content: {fileID: 1877376903}
