@@ -16,6 +16,7 @@ public class WordSelectionLine : MonoBehaviour
     [SerializeField] private float shakeAmount = 8f;
 
     public bool IsLocked { get; private set; } = false;
+    public float Thickness { get => thickness; set => thickness = value; }
 
     private Vector2 targetPosition;
     private Vector2 targetSize;
@@ -23,6 +24,10 @@ public class WordSelectionLine : MonoBehaviour
 
     private bool visible = false;
     private bool shaking = false;
+
+    private Color baseColor = Color.white;
+    private float fadeIn = 1f;      // 0..1 alpha ramp when the bar first appears
+    private float lockPop = -1f;    // >=0 while the "found" pop is playing
 
     private void Awake()
     {
@@ -42,6 +47,7 @@ public class WordSelectionLine : MonoBehaviour
         if (lineImage != null)
         {
             lineImage.raycastTarget = false;
+            baseColor = lineImage.color;
         }
 
         // Every newly created/loaded line starts unlocked.
@@ -55,21 +61,46 @@ public class WordSelectionLine : MonoBehaviour
         if (!visible || shaking || lineRect == null)
             return;
 
+        float dt = Time.unscaledDeltaTime;
+
         // Position and size are smoothed; rotation is set directly
         // so diagonal lines never swing or wobble.
         lineRect.anchoredPosition = Vector2.Lerp(
             lineRect.anchoredPosition,
             targetPosition,
-            Time.deltaTime * smoothSpeed
+            dt * smoothSpeed
         );
+
+        Vector2 size = targetSize;
+        if (lockPop >= 0f)
+        {
+            lockPop += dt;
+            float k = Mathf.Clamp01(lockPop / 0.35f);
+            size.y *= 1f + Tween.Punch(k) * 0.35f;
+            if (k >= 1f) lockPop = -1f;
+        }
 
         lineRect.sizeDelta = Vector2.Lerp(
             lineRect.sizeDelta,
-            targetSize,
-            Time.deltaTime * smoothSpeed
+            size,
+            dt * smoothSpeed
         );
 
         lineRect.localRotation = Quaternion.Euler(0f, 0f, targetRotation);
+
+        if (fadeIn < 1f && lineImage != null)
+        {
+            fadeIn = Mathf.Min(1f, fadeIn + dt * 8f);
+            ApplyAlpha(fadeIn);
+        }
+    }
+
+    private void ApplyAlpha(float k)
+    {
+        if (lineImage == null) return;
+        Color c = baseColor;
+        c.a = baseColor.a * k;
+        lineImage.color = c;
     }
 
     public void ShowBetween(RectTransform first, RectTransform last)
@@ -119,8 +150,10 @@ public class WordSelectionLine : MonoBehaviour
         if (firstShow)
         {
             lineRect.anchoredPosition = targetPosition;
-            lineRect.sizeDelta = targetSize;
+            lineRect.sizeDelta = new Vector2(thickness, thickness); // grows out from the first tile
             lineRect.localRotation = Quaternion.Euler(0f, 0f, targetRotation);
+            fadeIn = 0f;
+            ApplyAlpha(0f);
         }
 
         visible = true;
@@ -131,8 +164,14 @@ public class WordSelectionLine : MonoBehaviour
         }
     }
 
+    /// <summary>World-space centre of the bar (used to spawn effects).</summary>
+    public Vector3 WorldCenter => lineRect != null ? lineRect.position : transform.position;
+
+    public Color BaseColor => baseColor;
+
     public void SetColor(Color color)
     {
+        baseColor = color;
         if (lineImage != null)
         {
             lineImage.color = color;
@@ -143,6 +182,9 @@ public class WordSelectionLine : MonoBehaviour
     {
         IsLocked = true;
         visible = true;
+        fadeIn = 1f;
+        ApplyAlpha(1f);
+        lockPop = 0f;
 
         if (lineRect != null)
         {
@@ -159,6 +201,7 @@ public class WordSelectionLine : MonoBehaviour
     {
         visible = false;
         shaking = false;
+        lockPop = -1f;
 
         if (lineImage != null)
         {
@@ -192,23 +235,33 @@ public class WordSelectionLine : MonoBehaviour
             lineImage.enabled = true;
         }
 
-        Vector2 originalPosition = lineRect.anchoredPosition;
+        // Snap to the final shape so the shake happens on the full bar.
+        lineRect.sizeDelta = targetSize;
+        Vector2 originalPosition = targetPosition;
+        Color wrong = Color.Lerp(baseColor, new Color(0.95f, 0.3f, 0.25f, baseColor.a), 0.6f);
 
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
+            float k = Mathf.Clamp01(elapsed / duration);
 
-            float x = Random.Range(-shakeAmount, shakeAmount);
-            float y = Random.Range(-shakeAmount, shakeAmount);
+            float x = Mathf.Sin(elapsed * 70f) * shakeAmount * (1f - k);
+            lineRect.anchoredPosition = originalPosition + new Vector2(x, 0f);
 
-            lineRect.anchoredPosition = originalPosition + new Vector2(x, y);
+            if (lineImage != null)
+            {
+                Color c = wrong;
+                c.a = wrong.a * (1f - k * k);
+                lineImage.color = c;
+            }
 
             yield return null;
         }
 
         lineRect.anchoredPosition = originalPosition;
+        if (lineImage != null) lineImage.color = baseColor;
 
         shaking = false;
         Hide();

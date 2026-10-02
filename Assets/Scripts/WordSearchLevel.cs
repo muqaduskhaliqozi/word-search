@@ -41,16 +41,29 @@ public class WordSearchLevel : MonoBehaviour
     [SerializeField] private bool enableTutorialHint = false;
     [SerializeField] private WordTarget tutorialHintWord;
 
+    [Header("Juice")]
+    [Tooltip("Seconds to wait after the last word before the Level Complete popup shows.")]
+    [SerializeField] private float completePanelDelay = 0.9f;
+    [SerializeField] private bool playIntroAnimation = true;
+
     public int LevelNumber => levelNumber;
     public string LevelTitle => levelTitle;
     public Button NextButton => nextButton;
+    public bool IsLevelDone => levelDone;
+
+    /// <summary>Raised when a word is found (word, tiles).</summary>
+    public event Action<WordTarget, List<LetterTile>> WordFound;
+    /// <summary>Raised once when every word of the level is found.</summary>
+    public event Action LevelCompleted;
 
     private readonly List<LetterTile> currentPath = new List<LetterTile>();
     private readonly Dictionary<(int, int), LetterTile> tileGrid = new Dictionary<(int, int), LetterTile>();
+    private readonly List<LetterTile> tutorialHintTiles = new List<LetterTile>();
 
     private bool isSelecting;
     private bool hintActive;
     private bool wrongAnimationPlaying;
+    private bool levelDone;
 
     private WordSelectionLine activeLine;
     private int activeLineIndex = -1;
@@ -113,13 +126,14 @@ public class WordSearchLevel : MonoBehaviour
 
     public void InitializeLevel()
     {
-        Debug.Log($"[WordSearchLevel] Initializing Level {levelNumber} - {levelTitle}");
-
         isSelecting = false;
         hintActive = false;
         wrongAnimationPlaying = false;
+        levelDone = false;
+        StopAllCoroutines();
 
         currentPath.Clear();
+        tutorialHintTiles.Clear();
         activeLine = null;
         activeLineIndex = -1;
         startTile = null;
@@ -149,8 +163,6 @@ public class WordSearchLevel : MonoBehaviour
             }
         }
 
-        Debug.Log($"[WordSearchLevel] Level {levelNumber} grid contains {tileGrid.Count} unique tiles.");
-
         foreach (WordTarget target in targetWords)
         {
             if (target != null)
@@ -170,6 +182,24 @@ public class WordSearchLevel : MonoBehaviour
         if (levelCompletePanel != null)
         {
             levelCompletePanel.SetActive(false);
+        }
+
+        PlayIntro();
+    }
+
+    /// <summary>Tiles pop in diagonally, word chips pop one after another.</summary>
+    public void PlayIntro()
+    {
+        if (!playIntroAnimation || !Application.isPlaying || !isActiveAndEnabled) return;
+
+        foreach (LetterTile tile in letterTiles)
+        {
+            if (tile != null) tile.PlayIntro(0.05f + (tile.Row + tile.Column) * 0.035f);
+        }
+
+        for (int i = 0; i < targetWords.Count; i++)
+        {
+            if (targetWords[i] != null) targetWords[i].PlayNudge(0.25f + i * 0.06f);
         }
     }
 
@@ -195,14 +225,18 @@ public class WordSearchLevel : MonoBehaviour
             hintTarget = targetWords[0];
         }
 
-        if (hintTarget == null || hintTarget.SolutionTiles == null) return;
+        if (hintTarget == null) return;
+
+        List<LetterTile> tiles = GetWordTiles(hintTarget);
+        if (tiles == null) return;
 
         hintActive = true;
-        foreach (LetterTile tile in hintTarget.SolutionTiles)
+        foreach (LetterTile tile in tiles)
         {
             if (tile != null)
             {
                 tile.SetHint(true);
+                tutorialHintTiles.Add(tile);
             }
         }
     }
@@ -212,13 +246,130 @@ public class WordSearchLevel : MonoBehaviour
         if (!hintActive) return;
 
         hintActive = false;
-        foreach (LetterTile tile in letterTiles)
+        foreach (LetterTile tile in tutorialHintTiles)
         {
-            if (tile != null)
+            if (tile != null && !tile.IsFound)
             {
                 tile.SetHint(false);
             }
         }
+        tutorialHintTiles.Clear();
+    }
+
+    // ------------------------------------------------------------------
+    // Booster API (used by GameHUD)
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Reveals the first letter of an unfound word (or the whole word if all first letters
+    /// are already revealed). Returns false if nothing could be hinted.
+    /// </summary>
+    public bool UseHint()
+    {
+        if (levelDone) return false;
+
+        WordTarget fallback = null;
+        List<LetterTile> fallbackTiles = null;
+
+        foreach (WordTarget target in targetWords)
+        {
+            if (target == null || target.IsCompleted) continue;
+            List<LetterTile> tiles = GetWordTiles(target);
+            if (tiles == null || tiles.Count == 0) continue;
+
+            if (!tiles[0].IsHinted)
+            {
+                tiles[0].SetHint(true);
+                target.PlayNudge();
+                SfxPlayer.Play(SfxPlayer.Sfx.Hint);
+                if (UIBurst.Instance != null) UIBurst.Instance.Sparkles(tiles[0].transform.position, new Color(1f, 0.8f, 0.3f), 10, 140f);
+                return true;
+            }
+
+            if (fallback == null)
+            {
+                fallback = target;
+                fallbackTiles = tiles;
+            }
+        }
+
+        if (fallback != null)
+        {
+            foreach (LetterTile t in fallbackTiles) t.SetHint(true);
+            fallback.PlayNudge();
+            SfxPlayer.Play(SfxPlayer.Sfx.Hint);
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>Shuffles the order of the word chips (they slide to their new places).</summary>
+    public void ShuffleWordList()
+    {
+        List<Transform> chips = new List<Transform>();
+        foreach (WordTarget target in targetWords)
+        {
+            if (target != null) chips.Add(target.transform);
+        }
+        if (chips.Count < 2) return;
+
+        for (int i = chips.Count - 1; i > 0; i--)
+        {
+            int j = UnityEngine.Random.Range(0, i + 1);
+            (chips[i], chips[j]) = (chips[j], chips[i]);
+        }
+
+        for (int i = 0; i < chips.Count; i++)
+        {
+            chips[i].SetSiblingIndex(i);
+        }
+
+        foreach (LetterTile tile in letterTiles)
+        {
+            if (tile != null) tile.PlayFoundBounce((tile.Row + tile.Column) * 0.03f);
+        }
+
+        SfxPlayer.Play(SfxPlayer.Sfx.Shuffle);
+    }
+
+    /// <summary>The tiles that spell a word: assigned solution tiles, or found by searching the grid.</summary>
+    public List<LetterTile> GetWordTiles(WordTarget target)
+    {
+        if (target == null) return null;
+        string word = string.IsNullOrEmpty(target.TargetWord) ? "" : target.TargetWord.ToUpper();
+
+        List<LetterTile> sol = target.SolutionTiles;
+        if (sol != null && sol.Count > 0 && (word.Length == 0 || sol.Count == word.Length) && !sol.Contains(null))
+        {
+            return new List<LetterTile>(sol);
+        }
+
+        if (word.Length == 0) return null;
+
+        foreach (LetterTile start in letterTiles)
+        {
+            if (start == null || string.IsNullOrEmpty(start.Letter)) continue;
+            if (char.ToUpperInvariant(start.Letter[0]) != word[0]) continue;
+
+            foreach (Vector2Int dir in Directions)
+            {
+                List<LetterTile> path = new List<LetterTile> { start };
+                bool ok = true;
+                for (int i = 1; i < word.Length; i++)
+                {
+                    if (!tileGrid.TryGetValue((start.Row + dir.x * i, start.Column + dir.y * i), out LetterTile t) ||
+                        string.IsNullOrEmpty(t.Letter) || char.ToUpperInvariant(t.Letter[0]) != word[i])
+                    {
+                        ok = false;
+                        break;
+                    }
+                    path.Add(t);
+                }
+                if (ok) return path;
+            }
+        }
+        return null;
     }
 
     // ------------------------------------------------------------------
@@ -227,7 +378,7 @@ public class WordSearchLevel : MonoBehaviour
 
     public void OnTilePointerDown(LetterTile tile)
     {
-        if (tile == null || wrongAnimationPlaying) return;
+        if (tile == null || wrongAnimationPlaying || levelDone) return;
 
         ClearTutorialHint();
         ClearCurrentSelection();
@@ -250,6 +401,7 @@ public class WordSearchLevel : MonoBehaviour
         isSelecting = true;
         startTile = tile;
         AddTileToSelection(tile);
+        SfxPlayer.Play(SfxPlayer.Sfx.Select, 1f);
     }
 
     public void OnTilePointerEnter(LetterTile tile)
@@ -347,6 +499,8 @@ public class WordSearchLevel : MonoBehaviour
             if (same) return;
         }
 
+        bool grew = newPath.Count > currentPath.Count;
+
         // Deselect tiles that are no longer in the path
         foreach (LetterTile t in currentPath)
         {
@@ -366,6 +520,12 @@ public class WordSearchLevel : MonoBehaviour
             {
                 t.SetSelected(true);
             }
+        }
+
+        if (grew)
+        {
+            // rising "tick" while dragging
+            SfxPlayer.Play(SfxPlayer.Sfx.Select, 1f + (currentPath.Count - 1) * 0.08f);
         }
 
         UpdateSelectionLine();
@@ -442,6 +602,13 @@ public class WordSearchLevel : MonoBehaviour
             return;
         }
 
+        // A single tap is not a guess - just clear quietly.
+        if (currentPath.Count == 1)
+        {
+            ClearCurrentSelection();
+            return;
+        }
+
         string selectedLetters = "";
         foreach (LetterTile tile in currentPath)
         {
@@ -450,8 +617,6 @@ public class WordSearchLevel : MonoBehaviour
                 selectedLetters += tile.Letter;
             }
         }
-
-        Debug.Log($"[WordSearchLevel] Selected: {selectedLetters}");
 
         WordTarget matchedTarget = null;
         foreach (WordTarget target in targetWords)
@@ -467,39 +632,57 @@ public class WordSearchLevel : MonoBehaviour
 
         if (matchedTarget != null)
         {
-            Debug.Log($"[WordSearchLevel] CORRECT WORD: {matchedTarget.TargetWord}");
-
             matchedTarget.SetCompleted(true);
 
-            foreach (LetterTile tile in currentPath)
+            List<LetterTile> foundTiles = new List<LetterTile>(currentPath);
+            for (int i = 0; i < foundTiles.Count; i++)
             {
+                LetterTile tile = foundTiles[i];
                 if (tile != null)
                 {
                     tile.SetSelected(false);
                     tile.SetFound(true);
+                    tile.PlayFoundBounce(i * 0.05f);
                 }
             }
 
+            Color fxColor = Color.white;
             if (activeLine != null)
             {
+                fxColor = activeLine.BaseColor;
                 activeLine.Lock();
             }
+
+            if (UIBurst.Instance != null && foundTiles.Count > 0)
+            {
+                Vector3 center = (foundTiles[0].transform.position + foundTiles[foundTiles.Count - 1].transform.position) * 0.5f;
+                UIBurst.Instance.Sparkles(center, fxColor);
+                UIBurst.Instance.Sparkles(matchedTarget.transform.position, fxColor, 8, 120f);
+            }
+            SfxPlayer.Play(SfxPlayer.Sfx.Found);
 
             currentPath.Clear();
             activeLine = null;
             activeLineIndex = -1;
 
+            WordFound?.Invoke(matchedTarget, foundTiles);
+
             CheckLevelCompletion();
             return;
         }
 
-        Debug.Log($"[WordSearchLevel] WRONG WORD: {selectedLetters}");
         StartCoroutine(WrongSelectionRoutine());
     }
 
     private IEnumerator WrongSelectionRoutine()
     {
         wrongAnimationPlaying = true;
+        SfxPlayer.Play(SfxPlayer.Sfx.Wrong);
+
+        foreach (LetterTile tile in currentPath)
+        {
+            if (tile != null && !tile.IsFound) tile.PlayShake();
+        }
 
         if (activeLine != null)
         {
@@ -536,11 +719,11 @@ public class WordSearchLevel : MonoBehaviour
 
     private void ApplyLineColor(WordSelectionLine line)
     {
-        if (line == null) return;
+        if (line == null || lineColors == null || lineColors.Count == 0) return;
 
-        if (activeLineIndex >= 0 && activeLineIndex < lineColors.Count)
+        if (activeLineIndex >= 0)
         {
-            line.SetColor(lineColors[activeLineIndex]);
+            line.SetColor(lineColors[activeLineIndex % lineColors.Count]);
         }
     }
 
@@ -558,7 +741,24 @@ public class WordSearchLevel : MonoBehaviour
 
         if (!allCompleted) return;
 
+        levelDone = true;
         Debug.Log($"[WordSearchLevel] LEVEL {levelNumber} COMPLETE!");
+        StartCoroutine(LevelCompleteRoutine());
+    }
+
+    private IEnumerator LevelCompleteRoutine()
+    {
+        yield return new WaitForSecondsRealtime(0.35f);
+
+        // celebratory wave across the whole board
+        foreach (LetterTile tile in letterTiles)
+        {
+            if (tile != null) tile.PlayFoundBounce((tile.Row + tile.Column) * 0.04f);
+        }
+
+        yield return new WaitForSecondsRealtime(Mathf.Max(0f, completePanelDelay - 0.35f));
+
+        LevelCompleted?.Invoke();
 
         if (levelCompletePanel != null)
         {

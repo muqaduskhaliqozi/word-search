@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -6,6 +7,8 @@ using TMPro;
 
 public class LevelManager : MonoBehaviour
 {
+    public const string ProgressKey = "WS_LevelIndex";
+
     [Header("Levels Container / Array")]
     [SerializeField] private List<GameObject> levels = new List<GameObject>();
 
@@ -20,6 +23,10 @@ public class LevelManager : MonoBehaviour
     [Header("Current Level")]
     [SerializeField] private int currentLevelIndex = 0;
 
+    [Header("Progress")]
+    [Tooltip("Remember the last reached level between sessions (PlayerPrefs).")]
+    [SerializeField] private bool saveProgress = true;
+
     [Header("Next Button Safety")]
     [Tooltip("Ignore Next unless the complete panel is visible (blocks stray calls).")]
     [SerializeField] private bool requireCompletePanelVisible = true;
@@ -30,12 +37,35 @@ public class LevelManager : MonoBehaviour
 
     public int CurrentLevelIndex => currentLevelIndex;
     public int CurrentLevelNumber => currentLevelIndex + 1;
+    public int LevelCount => levels != null ? levels.Count : 0;
+    public WordSearchLevel ActiveLevel => activeLevelScript;
+
+    /// <summary>Raised every time a level is (re)started.</summary>
+    public event Action<WordSearchLevel> LevelStarted;
+    /// <summary>Raised after the last level when not looping.</summary>
+    public event Action AllLevelsCompleted;
 
     private WordSearchLevel activeLevelScript;
+    private WordSearchLevel hookedLevel;
     private int lastNextFrame = -1;
 
     private void Start()
     {
+        if (levels != null && levels.Count > 0)
+        {
+            LevelProgress.LevelCount = levels.Count;
+
+            if (LevelProgress.TryConsumeRequestedLevel(out int requested))
+            {
+                // chosen from the Main Menu / Level Select (never past the furthest unlocked level)
+                currentLevelIndex = Mathf.Clamp(requested, 0, Mathf.Min(levels.Count - 1, LevelProgress.Unlocked));
+            }
+            else if (saveProgress)
+            {
+                currentLevelIndex = Mathf.Clamp(PlayerPrefs.GetInt(ProgressKey, currentLevelIndex), 0, levels.Count - 1);
+            }
+        }
+
         HideCompletePanel();
         SetupNextButton();   // wired ONCE here
         SetupCurrentLevel();
@@ -89,10 +119,23 @@ public class LevelManager : MonoBehaviour
             activeLevelScript.SetSharedNextButton(sharedNextButton);
         }
 
+        // Unlock the next level when this one is finished
+        if (hookedLevel != null) hookedLevel.LevelCompleted -= OnActiveLevelCompleted;
+        hookedLevel = activeLevelScript;
+        hookedLevel.LevelCompleted += OnActiveLevelCompleted;
+
         // Initialize active level
         activeLevelScript.InitializeLevel();
 
         UpdateLevelText();
+
+        if (saveProgress)
+        {
+            PlayerPrefs.SetInt(ProgressKey, currentLevelIndex);
+            PlayerPrefs.Save();
+        }
+
+        LevelStarted?.Invoke(activeLevelScript);
 
         Debug.Log($"[LevelManager] Active Level: {currentLevelIndex + 1} of {levels.Count} " +
                   $"(object: {currentLevel.name}, title: {activeLevelScript.LevelTitle})");
@@ -111,8 +154,6 @@ public class LevelManager : MonoBehaviour
         // Ignore a second call in the same frame (e.g. two listeners on the Next button)
         if (lastNextFrame == Time.frameCount)
         {
-            Debug.LogWarning("[LevelManager] LoadNextLevel called twice in the same frame - ignored. " +
-                             "Check the Next button's OnClick list in the Inspector.");
             return;
         }
         lastNextFrame = Time.frameCount;
@@ -125,24 +166,38 @@ public class LevelManager : MonoBehaviour
         }
 
         int nextIndex = currentLevelIndex + 1;
-        Debug.Log($"[LevelManager] LoadNextLevel: {currentLevelIndex + 1} -> {nextIndex + 1}");
 
         if (nextIndex >= levels.Count)
         {
             if (!loopToFirstLevel)
             {
                 Debug.Log("[LevelManager] All levels completed.");
+                if (saveProgress)
+                {
+                    PlayerPrefs.SetInt(ProgressKey, 0);
+                    PlayerPrefs.Save();
+                }
                 onAllLevelsCompleted?.Invoke();
+                AllLevelsCompleted?.Invoke();
                 return;
             }
 
-            Debug.Log("[LevelManager] All levels completed! Looping back to Level 1.");
             nextIndex = 0;
         }
 
         currentLevelIndex = nextIndex;
         HideCompletePanel();
         SetupCurrentLevel();
+    }
+
+    private void OnActiveLevelCompleted()
+    {
+        LevelProgress.MarkCompleted(currentLevelIndex);
+    }
+
+    private void OnDestroy()
+    {
+        if (hookedLevel != null) hookedLevel.LevelCompleted -= OnActiveLevelCompleted;
     }
 
     public void RestartCurrentLevel()
