@@ -2,7 +2,7 @@
 <dependencies>
   <!--  手动集成注释start-->
   <iosPods>
-    <iosPod name="" version="&gt;=0" />
+    <iosPod name="SolarEngineSDKiOSInter" version="&gt;=0" />
   </iosPods>
   <!--  手动集成注释end-->
 </dependencies>

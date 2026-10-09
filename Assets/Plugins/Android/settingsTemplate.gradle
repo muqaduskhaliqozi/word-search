@@ -27,10 +27,27 @@ dependencyResolutionManagement {
         maven {
             url "https://dl-maven-android.mintegral.com/repository/mbridge_android_sdk_oversea" // Assets/MaxSdk/Mediation/Mintegral/Editor/Dependencies.xml:8
         }
+        maven {
+            url "https://maven-android.solar-engine.com/repository/se_sdk_for_android/" // Assets/SolarEngineNet/Android/Editor/Dependencies.xml:8
+        }
         mavenLocal()
 // Android Resolver Repos End
         flatDir {
             dirs "${project(':unityLibrary').projectDir}/libs"
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Unity 2022.3 ships Android Gradle Plugin 7.4.2, whose dexer (D8) crashes on
+// androidx.core 1.15+ ("D8: java.lang.NullPointerException" in core-1.15.0-runtime.jar).
+// The ad / Firebase SDKs pull 1.15 in transitively, so pin it to the newest version AGP 7.4 can dex.
+// Remove this block after moving to Unity 6 (AGP 8.x).
+gradle.beforeProject { p ->
+    p.configurations.all {
+        resolutionStrategy {
+            force 'androidx.core:core:1.13.1'
+            force 'androidx.core:core-ktx:1.13.1'
         }
     }
 }

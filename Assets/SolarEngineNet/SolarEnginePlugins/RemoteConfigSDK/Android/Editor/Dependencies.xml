@@ -1,2 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<dependencies />
+<dependencies>
+  <androidPackages>
+    <androidPackage spec="com.reyun.solar.engine.oversea:solar-remote-config:+" />
+  </androidPackages>
+</dependencies>

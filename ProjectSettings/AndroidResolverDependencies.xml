@@ -15,13 +15,14 @@
     <package>com.applovin.mediation:yandex-adapter:7.18.5.0</package>
     <package>com.applovin:applovin-sdk:13.6.2</package>
     <package>com.google.android.gms:play-services-base:18.7.2</package>
-    <package>com.google.android.ump:user-messaging-platform:4.0.0</package>
     <package>com.google.firebase:firebase-analytics:23.0.0</package>
     <package>com.google.firebase:firebase-analytics-unity:13.2.0</package>
     <package>com.google.firebase:firebase-app-unity:13.2.0</package>
     <package>com.google.firebase:firebase-common:22.0.0</package>
     <package>com.google.firebase:firebase-config:23.0.0</package>
     <package>com.google.firebase:firebase-config-unity:13.2.0</package>
+    <package>com.reyun.solar.engine.oversea:solar-engine-core:+</package>
+    <package>com.reyun.solar.engine.oversea:solar-remote-config:+</package>
     <package>com.squareup.picasso:picasso:2.71828</package>
   </packages>
   <files>
@@ -33,7 +34,7 @@
     <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-config-unity/13.2.0/firebase-config-unity-13.2.0.pom</file>
   </files>
   <settings>
-    <setting name="androidAbis" value="armeabi-v7a" />
+    <setting name="androidAbis" value="arm64-v8a,armeabi-v7a" />
     <setting name="bundleId" value="com.word.search.words" />
     <setting name="explodeAars" value="True" />
     <setting name="gradleBuildEnabled" value="True" />

@@ -28,6 +28,9 @@ public class LevelSelectPanel : MonoBehaviour
     [SerializeField] private Sprite lockedSprite;
     [SerializeField] private Sprite checkIcon;
     [SerializeField] private Sprite lockIcon;
+    [SerializeField] private Color completedNumberColor = Color.white;
+    [SerializeField] private Color currentNumberColor = new Color(0.42f, 0.28f, 0.13f, 1f);
+    [SerializeField] private Color lockedNumberColor = new Color(0.62f, 0.55f, 0.46f, 1f);
 
     private readonly List<GameObject> buttons = new List<GameObject>();
     private PopupAnimator popup;
@@ -105,9 +108,9 @@ public class LevelSelectPanel : MonoBehaviour
             if (number != null)
             {
                 number.text = (i + 1).ToString();
-                number.color = completed ? Color.white
-                    : locked ? new Color(0.62f, 0.55f, 0.46f, 1f)
-                    : new Color(0.42f, 0.28f, 0.13f, 1f);
+                number.color = completed ? completedNumberColor
+                    : locked ? lockedNumberColor
+                    : currentNumberColor;
             }
 
             TMP_Text caption = Find<TMP_Text>(b, "NT_Caption");
