@@ -185,6 +185,7 @@ public class GameHUD : MonoBehaviour
         if (!ready)
         {
             if (ads != null) { try { ads.LoadRewardedVideo(); } catch (System.Exception) { } }
+            Toast.Show(Toast.VideoUnavailable); // never a silently dead button
             SfxPlayer.Play(SfxPlayer.Sfx.Wrong);
             if (coinBar != null) StartCoroutine(Shake(coinBar));
             return;
@@ -264,6 +265,7 @@ public class GameHUD : MonoBehaviour
         if (!ready)
         {
             if (ads != null) { try { ads.LoadRewardedVideo(); } catch (System.Exception) { } }
+            Toast.Show(Toast.VideoUnavailable); // never a silently dead button
             SfxPlayer.Play(SfxPlayer.Sfx.Wrong);
             if (source != null) StartCoroutine(Shake(source));
             return;
@@ -271,8 +273,27 @@ public class GameHUD : MonoBehaviour
         ads.ShowRewardedVideo(() => pendingRefill = key);
     }
 
+    private GameObject completePanel;
+
+    /// <summary>
+    /// Android back in gameplay. Every branch swallows the key, so back can never quit the app.
+    /// Mirrors the on-screen buttons: closes the settings popup if open, otherwise = the Back button (home).
+    /// </summary>
+    private void HandleBackKey()
+    {
+        if (!Input.GetKeyDown(KeyCode.Escape)) return;
+        if (Modals.AnyOpen) return;                                     // consent / no-internet / offer own it
+        if (settingsPopup != null && settingsPopup.gameObject.activeSelf) { CloseSettings(); return; }
+        if (completePanel == null) { Transform t = transform.Find("LevelCompletePanel"); if (t != null) completePanel = t.gameObject; }
+        if (completePanel != null && completePanel.activeInHierarchy) return; // use Next; don't leave mid-celebration
+        if (SceneFader.IsBusy) return;
+        SfxPlayer.Play(SfxPlayer.Sfx.Click);
+        GoHome();
+    }
+
     private void Update()
     {
+        HandleBackKey();
         string key = pendingRefill;
         if (key == null) return;
         pendingRefill = null;
@@ -296,6 +317,7 @@ public class GameHUD : MonoBehaviour
         if (level.UseHint())
         {
             SetUses(HintUsesKey, Uses(HintUsesKey) - 1);
+            GameEvents.PowerUpUsed("hint");
             if (hintBadge != null) StartCoroutine(Punch(hintBadge.transform));
         }
     }
@@ -311,6 +333,7 @@ public class GameHUD : MonoBehaviour
         }
         level.ShuffleWordList();
         SetUses(ShuffleUsesKey, Uses(ShuffleUsesKey) - 1);
+        GameEvents.PowerUpUsed("shuffle");
         if (shuffleButton != null)
         {
             Transform icon = shuffleButton.transform.Find("Icon");

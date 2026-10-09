@@ -26,6 +26,10 @@ public class SplashController : MonoBehaviour
 
     private IEnumerator LoadGame()
     {
+        // first launch: hold the whole splash until Terms/Privacy are accepted
+        // (the SDKs only start at Accept, so running the timer underneath would waste it)
+        while (!ConsentGate.Accepted) yield return null;
+
         float elapsed = 0f;
 
         while (elapsed < loadingDuration)

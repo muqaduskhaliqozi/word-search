@@ -111,8 +111,9 @@ public class MediationHandler : MonoBehaviour
             return;
         }
 
-        // Init MaxApplovin — SolarEngine starts after MaxAppLovin signals ready
-        InitializeMaxlovin();
+        // Init MaxApplovin — SolarEngine starts after MaxAppLovin signals ready.
+        // Held until the player accepts Terms/Privacy on first launch (ConsentGate).
+        ConsentGate.RunWhenAccepted(InitializeMaxlovin);
     }
     #endregion
 
@@ -315,6 +316,7 @@ public class MediationHandler : MonoBehaviour
 
     private void OnBannerAdRevenuePaidEvent(string adUnitId, MaxSdkBase.AdInfo adInfo)
     {
+        GameEvents.BannerAdsShown();
 #if UNITY_EDITOR
 
         Debug.LogError("Banner1 ad revenue paid");
@@ -416,6 +418,7 @@ public class MediationHandler : MonoBehaviour
 
     private void OnBannerAdRevenuePaidEvent2(string adUnitId, MaxSdkBase.AdInfo adInfo)
     {
+        GameEvents.BannerAdsShown();
 #if UNITY_EDITOR
 
         Debug.LogError("Banner2 ad revenue paid");
@@ -494,6 +497,7 @@ public class MediationHandler : MonoBehaviour
     }
     private void OnInterstitialDisplayed(string adUnitId, MaxSdkBase.AdInfo adInfo)
     {
+        GameEvents.InterAdsShown();
 #if UNITY_EDITOR
         Debug.LogError("Interstitial ad displayed");
 #endif
@@ -533,6 +537,8 @@ public class MediationHandler : MonoBehaviour
 
     private void OnInterstitialDismissedEvent(string adUnitId, MaxSdkBase.AdInfo adInfo)
     {
+        AdGate.NotifyInterstitialClosed();      // cooldown runs from the END of the ad
+        RemoveAdsOffer.NotifyInterstitialClosed(); // offer panel every Nth interstitial
 
 #if UNITY_EDITOR
         Debug.LogError("Interstitial dismissed");
@@ -595,8 +601,8 @@ public class MediationHandler : MonoBehaviour
 
     public void ShowRewardedVideo(RewardUserDelegate _delegate)
     {
-        if (_isLowRamDevice) return;
-        if (Application.internetReachability != NetworkReachability.NotReachable)
+        if (_isLowRamDevice) { Debug.Log("Rewarded skipped - low RAM device"); Toast.Show(Toast.VideoUnavailable); return; }
+        if (Application.internetReachability == NetworkReachability.NotReachable) { Debug.Log("Rewarded skipped - no connectivity"); Toast.Show(Toast.VideoUnavailable); return; }
         {
 #if UNITY_EDITOR
             Debug.LogError("Rewarded  AppLovin Show Call");
@@ -615,6 +621,7 @@ public class MediationHandler : MonoBehaviour
 #if UNITY_EDITOR
                 Debug.LogError("Rewarded Inters AppLovin Not Loaded");
 #endif
+                Debug.Log("Rewarded skipped - not loaded"); Toast.Show(Toast.VideoUnavailable);
                 LoadRewardedVideo();
             }
         }
@@ -685,6 +692,7 @@ public class MediationHandler : MonoBehaviour
 
     private void OnRewardedAdRevenuePaidEvent(string adUnitId, MaxSdkBase.AdInfo adInfo)
     {
+        GameEvents.RewardedAdsShown();
 #if UNITY_EDITOR
         Debug.LogError("Rewarded ad revenue paid");
 #endif
@@ -698,6 +706,13 @@ public class MediationHandler : MonoBehaviour
 
 
     #region RemoveAds
+
+    /// <summary>Called when Remove Ads is bought/restored: hides banners already on screen.</summary>
+    public void RemoveAdsPurchased()
+    {
+        try { HideSmallBanner(); } catch (Exception) { }
+        try { HideSmallBanner2(); } catch (Exception) { }
+    }
     private bool IsRemoveAds()
     {
         bool removed = PlayerPrefs.GetInt("RemoveAds") == 1;

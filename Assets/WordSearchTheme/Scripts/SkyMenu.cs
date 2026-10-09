@@ -124,16 +124,16 @@ public class SkyMenu : MonoBehaviour
         Hook(newGameButton, NewGame);
         Hook(leaderboardButton, Leaderboard);
         Hook(rateButton, RateUs);
-        Hook(privacyButton, () => OpenUrl(privacyPolicyUrl));
-        Hook(moreGamesButton, () => OpenUrl(moreGamesUrl));
+        Hook(privacyButton, () => GameLinks.Open(GameLinks.PrivacyPolicy, "Privacy Policy"));
+        Hook(moreGamesButton, () => GameLinks.Open(GameLinks.MoreGames, "More Games"));
 
         Hook(settingsBackButton, CloseSettings);
         Hook(removeAdsBuyButton, RemoveAds);
         Hook(soundToggle, () => { SfxPlayer.SoundOn = !SfxPlayer.SoundOn; RefreshToggles(); });
         Hook(musicToggle, () => { GameSettings.MusicOn = !GameSettings.MusicOn; RefreshToggles(); });
         Hook(vibrateToggle, () => { GameSettings.VibrateOn = !GameSettings.VibrateOn; RefreshToggles(); GameSettings.Vibrate(); });
-        Hook(settingsPrivacyButton, () => OpenUrl(privacyPolicyUrl));
-        Hook(termsButton, () => OpenUrl(termsUrl));
+        Hook(settingsPrivacyButton, () => GameLinks.Open(GameLinks.PrivacyPolicy, "Privacy Policy"));
+        Hook(termsButton, () => GameLinks.Open(GameLinks.TermsOfService, "Terms of Service"));
 
         if (priceText != null) priceText.text = !string.IsNullOrEmpty(IAPManager.RemoveAdsPrice) ? IAPManager.RemoveAdsPrice : price;
         IAPManager.PriceUpdated += OnPriceUpdated;
@@ -160,10 +160,20 @@ public class SkyMenu : MonoBehaviour
         if (priceText != null && !string.IsNullOrEmpty(localizedPrice)) priceText.text = localizedPrice;
     }
 
+    private LevelSelectPanel levelSelect;
+
+    /// <summary>
+    /// Android back on the menu: closes whatever is open on top (settings screen, level select).
+    /// On the bare main menu it does nothing on purpose - back must never quit a puzzle game mid-session.
+    /// </summary>
     private void Update()
     {
-        // Android back button closes the settings screen
-        if (Input.GetKeyDown(KeyCode.Escape) && settingsScreen != null && settingsScreen.activeSelf) CloseSettings();
+        if (!Input.GetKeyDown(KeyCode.Escape)) return;
+        if (Modals.AnyOpen) return;
+        if (settingsScreen != null && settingsScreen.activeSelf) { CloseSettings(); return; }
+        if (levelSelect == null) levelSelect = FindObjectOfType<LevelSelectPanel>(true);
+        if (levelSelect != null && levelSelect.gameObject.activeSelf) { levelSelect.Close(); return; }
+        // swallowed
     }
 
     private static void Hook(Button b, UnityAction a)

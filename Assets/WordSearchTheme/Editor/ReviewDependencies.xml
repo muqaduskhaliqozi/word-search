@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Google Play In-App Review library, pulled in by External Dependency Manager (Assets > External Dependency Manager > Android Resolver > Force Resolve).
+     StoreReview.cs talks to it over JNI, so no Unity plugin / scoped registry is needed. -->
+<dependencies>
+  <androidPackages>
+    <androidPackage spec="com.google.android.play:review:2.0.2">
+      <repositories>
+        <repository>https://maven.google.com</repository>
+      </repositories>
+    </androidPackage>
+  </androidPackages>
+</dependencies>

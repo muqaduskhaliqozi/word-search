@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" android:installLocation="preferExternal">
+  <!-- tools:replace settles the allowBackup clash between unityLibrary (true) and ByteBrew's library (false) -->
+  <application android:label="@string/app_name" android:icon="@mipmap/app_icon"
+               android:allowBackup="true"
+               tools:replace="android:allowBackup" />
+  <supports-screens android:smallScreens="true" android:normalScreens="true" android:largeScreens="true" android:xlargeScreens="true" android:anyDensity="true" />
+</manifest>

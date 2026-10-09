@@ -42,6 +42,7 @@ public static class SkyThemeBuilder
             ImportSprites();
             EditorUtility.DisplayProgressBar("Sky Theme", "Fonts...", 0.25f);
             LoadFonts();
+            BuildRuntimeResources();
             EditorUtility.DisplayProgressBar("Sky Theme", "Splash...", 0.5f);
             ProcessScene(SplashScene, BuildSplash);
             EditorUtility.DisplayProgressBar("Sky Theme", "Main menu + settings...", 0.75f);
@@ -51,6 +52,7 @@ public static class SkyThemeBuilder
         }
         finally { EditorUtility.ClearProgressBar(); }
 
+        PortableFeaturesEditor.ConfigureNotifications();
         AssetDatabase.SaveAssets();
         if (!string.IsNullOrEmpty(previous) && File.Exists(previous)) EditorSceneManager.OpenScene(previous);
         Debug.Log("<color=#1E8CF0><b>[SkyTheme]</b></color> Splash + Main Menu + Settings rebuilt. Press Play on SplashScene.");
@@ -209,6 +211,40 @@ public static class SkyThemeBuilder
         return rt;
     }
 
+    /// <summary>Moves children of a previous run's "SafeArea" node back up so the builder finds them again.</summary>
+    private static void Unwrap(Transform parent)
+    {
+        Transform node = parent.Find("SafeArea");
+        if (node == null) return;
+        int index = node.GetSiblingIndex();
+        var kids = new List<Transform>();
+        foreach (Transform k in node) kids.Add(k);
+        foreach (Transform k in kids) { k.SetParent(parent, false); k.SetSiblingIndex(index++); }
+        Object.DestroyImmediate(node.gameObject);
+    }
+
+    /// <summary>Art + fonts for the panels that build themselves at runtime (consent, no-internet, offer).</summary>
+    private static void BuildRuntimeResources()
+    {
+        const string dir = Root + "/Resources";
+        const string path = dir + "/SkyUIResources.asset";
+        if (!AssetDatabase.IsValidFolder(dir)) AssetDatabase.CreateFolder(Root, "Resources");
+        SkyUIResources res = AssetDatabase.LoadAssetAtPath<SkyUIResources>(path);
+        if (res == null) { res = ScriptableObject.CreateInstance<SkyUIResources>(); AssetDatabase.CreateAsset(res, path); }
+        res.font = fredoka;
+        res.buttonFont = lato;
+        res.headerCard = S("sk_card_header");
+        res.plainCard = S("sk_card_sliceable");
+        res.greenButton = S("at_btn_green");
+        res.blueButton = S("at_btn_blue");
+        res.closeButton = S("sk_btn_close");
+        res.noAdsBadge = S("at_noads");
+        res.logo = S("at_logo");
+        res.coin = S("at_coin");
+        EditorUtility.SetDirty(res);
+        AssetDatabase.SaveAssets();
+    }
+
     private static Vector2 Size(Sprite s, float scale = 1f) => s != null ? s.rect.size * scale : new Vector2(100, 100);
 
     private static Image Img(GameObject go, Sprite s, bool raycast = false, Image.Type type = Image.Type.Simple)
@@ -334,6 +370,7 @@ public static class SkyThemeBuilder
             if (child.name != RootName) child.gameObject.SetActive(false);
 
         RectTransform root = Stretch(Ensure(canvas.transform, RootName));
+        Unwrap(root);
         root.SetAsLastSibling();
         return root;
     }
@@ -393,6 +430,8 @@ public static class SkyThemeBuilder
             EditorUtility.SetDirty(ctrl);
         }
         else Debug.LogWarning("[SkyTheme] SplashController not found in the splash scene.");
+
+        SafeArea.Wrap(root, "SK_Bg");
     }
 
     // ======================================================================
@@ -482,6 +521,9 @@ public static class SkyThemeBuilder
 
         sr.screen.transform.SetAsLastSibling();
         panel.transform.SetAsLastSibling();
+        SafeArea.Wrap(sr.screen.transform, "SK_Bg");
+        SafeArea.Wrap(panel.transform);
+        SafeArea.Wrap(root, "SK_Bg", "SK_Settings", "SK_LevelSelect");
         sr.screen.SetActive(false);
         panel.gameObject.SetActive(false);
     }
@@ -497,6 +539,7 @@ public static class SkyThemeBuilder
     {
         SettingsRefs r = new SettingsRefs();
         RectTransform screen = Stretch(Ensure(root, "SK_Settings"));
+        Unwrap(screen);
         r.screen = screen.gameObject;
         Background(screen, "sk_bg_settings");
 
@@ -552,6 +595,7 @@ public static class SkyThemeBuilder
     private static LevelSelectPanel BuildLevelSelect(Transform root, LevelSelectPanel oldPanel)
     {
         RectTransform pop = Stretch(Ensure(root, "SK_LevelSelect"));
+        Unwrap(pop);
         Image overlay = Img(pop.gameObject, null, true);
         overlay.color = new Color(0.05f, 0.22f, 0.38f, 0.55f);
 
@@ -743,6 +787,7 @@ public static class SkyThemeBuilder
 
         // ---------------- HUD
         RectTransform hud = Stretch(Ensure(c, "SK_HUD"));
+        GetOrAdd<SafeArea>(hud.gameObject); // HUD has no backdrop, so the whole node follows the safe area
         Button back = PicButton(hud, "SK_Back", "at_btn_back", Anchor.Top, 70, 90, 0.93f);
 
         Image coinBar = Pic(hud, "SK_CoinBar", "at_btn_blue_flat", Anchor.Top, 365, 90, 0.99f);
@@ -800,6 +845,8 @@ public static class SkyThemeBuilder
         if (completePanel != null) completePanel.SetAsLastSibling();
         settingsPopup.transform.SetAsLastSibling();
         if (fx != null) fx.SetAsLastSibling();
+        if (completePanel != null) SafeArea.Wrap(completePanel, "NT_Rays");
+        SafeArea.Wrap(settingsPopup.transform);
 
         // ---------------- wiring
         GameHUD h = GetOrAdd<GameHUD>(canvas.gameObject);
@@ -996,6 +1043,7 @@ public static class SkyThemeBuilder
         RectTransform rays = raysT as RectTransform;
         if (rays != null) { Image ri = rays.GetComponent<Image>(); if (ri != null) ri.color = new Color(1f, 1f, 1f, 0.25f); }
 
+        Unwrap(panel);
         Transform card = panel.Find("PanelCard");
         if (card == null) return null;
         RectTransform cardRect = (RectTransform)card;
@@ -1077,6 +1125,7 @@ public static class SkyThemeBuilder
                                                    out Button sound, out Button music, out Button vibrate)
     {
         RectTransform pop = Stretch(Ensure(canvas, "SK_SettingsPopup"));
+        Unwrap(pop);
         Image overlay = Img(pop.gameObject, null, true);
         overlay.color = new Color(0.05f, 0.22f, 0.38f, 0.6f);
 

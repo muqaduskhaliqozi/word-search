@@ -155,6 +155,7 @@ public class LevelManager : MonoBehaviour
         }
 
         LevelStarted?.Invoke(activeLevelScript);
+        GameEvents.LevelStart(CurrentLevelNumber);
 
         Debug.Log($"[LevelManager] Active Level: {currentLevelIndex + 1} of {LevelCount} " +
                   $"(object: {currentLevel.name}, title: {activeLevelScript.LevelTitle})");
@@ -182,6 +183,15 @@ public class LevelManager : MonoBehaviour
         {
             Debug.LogWarning("[LevelManager] Next ignored: level complete panel is not visible.");
             return;
+        }
+
+        // Post-level slot (win path only - Next exists only on the Level Complete panel).
+        // Review is checked OUTSIDE the ad gate so an ad cooldown can never swallow a review milestone.
+        int completedLevel = CurrentLevelNumber;
+        bool reviewTookTheSlot = StoreReview.TryRequestInsteadOfAd(completedLevel);
+        if (!reviewTookTheSlot && AdGate.AllowInterstitial(completedLevel) && MediationHandler.Instance != null)
+        {
+            MediationHandler.Instance.ShowInterstitial();
         }
 
         int nextIndex = currentLevelIndex + 1;
@@ -212,6 +222,9 @@ public class LevelManager : MonoBehaviour
     private void OnActiveLevelCompleted()
     {
         LevelProgress.MarkCompleted(currentLevelIndex);
+        GameEvents.LevelComplete(CurrentLevelNumber);
+        // ask for notification permission after a win (Android 13+ only shows the prompt a couple of times)
+        GameNotifications.RequestPermissionIfNeeded();
     }
 
     private void OnDestroy()

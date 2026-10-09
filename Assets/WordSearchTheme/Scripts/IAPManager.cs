@@ -48,7 +48,7 @@ public class IAPManager : MonoBehaviour
 
     private void Start()
     {
-        Connect();
+        ConsentGate.RunWhenAccepted(Connect);
     }
 
     private async void Connect()
@@ -85,6 +85,7 @@ public class IAPManager : MonoBehaviour
     // ------------------------------------------------------------------ store callbacks
     private void OnProductsFetched(List<Product> products)
     {
+        Debug.Log($"[IAP] store returned {products.Count} product(s)");
         foreach (Product p in products)
         {
             if (p?.definition == null || p.definition.id != RemoveAdsId) continue;
@@ -166,12 +167,11 @@ public class IAPManager : MonoBehaviour
     private void Grant(bool justBought)
     {
         if (!GameSettings.AdsRemoved) GameSettings.AdsRemoved = true;
-        MediationHandler ads = MediationHandler.Instance;
-        if (ads != null)
+        if (MediationHandler.Instance != null) MediationHandler.Instance.RemoveAdsPurchased(); // tear down live banners
+        if (justBought)
         {
-            try { ads.HideSmallBanner(); } catch (Exception) { }
-            try { ads.HideSmallBanner2(); } catch (Exception) { }
+            GameEvents.RemoveAdsPurchased();
+            PurchaseFinished?.Invoke(true, "Ads removed");
         }
-        if (justBought) PurchaseFinished?.Invoke(true, "Ads removed");
     }
 }

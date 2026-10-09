@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2df46aa4c8d6a49f3bc6a844bffb6a26, type: 3}
+  m_Name: SkyUIResources
+  m_EditorClassIdentifier: 
+  font: {fileID: 11400000, guid: 3bb6d1c3c402e497787223a34fd9a953, type: 2}
+  buttonFont: {fileID: 11400000, guid: 536f828de22ed4151b81db6319150232, type: 2}
+  headerCard: {fileID: 21300000, guid: 8d4360c56fea7450992012c8ee2da58f, type: 3}
+  plainCard: {fileID: 21300000, guid: af0fbded538a94f8898c623a39136919, type: 3}
+  greenButton: {fileID: 21300000, guid: f104564acde5842db8664b84e1de48cd, type: 3}
+  blueButton: {fileID: 21300000, guid: 7c1b7082a58334467af24e1ff89a9413, type: 3}
+  closeButton: {fileID: 21300000, guid: f6f7b6206a41d41a481f7eb188459b55, type: 3}
+  noAdsBadge: {fileID: 21300000, guid: 0825b681d8f7941959d40a929ed98cfd, type: 3}
+  logo: {fileID: 21300000, guid: 837668e6c093e479b91b3726ccf0d380, type: 3}
+  coin: {fileID: 21300000, guid: a9e4c8f9b9ce6436482a134e68c8dd23, type: 3}
