@@ -66,7 +66,6 @@ public class UIButtonJuice : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
         {
             velocity += 6f; // release kick -> overshoot
             if (playClickSound) SfxPlayer.Play(SfxPlayer.Sfx.Click);
-            Haptics.Light();
         }
         pressed = false;
     }

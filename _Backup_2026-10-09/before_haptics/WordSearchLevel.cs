@@ -368,7 +368,6 @@ public class WordSearchLevel : MonoBehaviour
                 tiles[0].SetHint(true);
                 target.PlayNudge();
                 SfxPlayer.Play(SfxPlayer.Sfx.Hint);
-                Haptics.Medium();
                 if (UIBurst.Instance != null) UIBurst.Instance.Sparkles(tiles[0].transform.position, new Color(1f, 0.8f, 0.3f), 10, 140f);
                 return true;
             }
@@ -385,7 +384,6 @@ public class WordSearchLevel : MonoBehaviour
             foreach (LetterTile t in fallbackTiles) t.SetHint(true);
             fallback.PlayNudge();
             SfxPlayer.Play(SfxPlayer.Sfx.Hint);
-                Haptics.Medium();
             return true;
         }
 
@@ -419,7 +417,6 @@ public class WordSearchLevel : MonoBehaviour
         }
 
         SfxPlayer.Play(SfxPlayer.Sfx.Shuffle);
-        Haptics.Medium();
     }
 
     /// <summary>The tiles that spell a word: assigned solution tiles, or found by searching the grid.</summary>
@@ -491,7 +488,6 @@ public class WordSearchLevel : MonoBehaviour
         startTile = tile;
         AddTileToSelection(tile);
         SfxPlayer.Play(SfxPlayer.Sfx.Select, 1f);
-        Haptics.Selection();
     }
 
     public void OnTilePointerEnter(LetterTile tile)
@@ -616,7 +612,6 @@ public class WordSearchLevel : MonoBehaviour
         {
             // rising "tick" while dragging
             SfxPlayer.Play(SfxPlayer.Sfx.Select, 1f + (currentPath.Count - 1) * 0.08f);
-            Haptics.Selection();
         }
 
         UpdateSelectionLine();
@@ -751,7 +746,6 @@ public class WordSearchLevel : MonoBehaviour
                 UIBurst.Instance.Sparkles(matchedTarget.transform.position, fxColor, 8, 120f);
             }
             SfxPlayer.Play(SfxPlayer.Sfx.Found);
-            Haptics.Success();
 
             currentPath.Clear();
             activeLine = null;
@@ -770,7 +764,6 @@ public class WordSearchLevel : MonoBehaviour
     {
         wrongAnimationPlaying = true;
         SfxPlayer.Play(SfxPlayer.Sfx.Wrong);
-        Haptics.Error();
 
         foreach (LetterTile tile in currentPath)
         {
@@ -852,7 +845,6 @@ public class WordSearchLevel : MonoBehaviour
         yield return new WaitForSecondsRealtime(Mathf.Max(0f, completePanelDelay - 0.35f));
 
         LevelCompleted?.Invoke();
-        Haptics.Heavy();
 
         if (levelCompletePanel != null)
         {

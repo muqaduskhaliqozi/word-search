@@ -54,8 +54,12 @@ public static class GameSettings
     }
 
     /// <summary>Short buzz if the player has vibration on.</summary>
-    /// <summary>Feedback buzz (used when the Vibrate switch is turned on).</summary>
-    public static void Vibrate() => Haptics.Medium();
+    public static void Vibrate()
+    {
+#if UNITY_ANDROID || UNITY_IOS
+        if (VibrateOn && Application.isPlaying) Handheld.Vibrate();
+#endif
+    }
 }
 
 /// <summary>
