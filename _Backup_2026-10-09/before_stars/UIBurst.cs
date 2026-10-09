@@ -18,14 +18,8 @@ public class UIBurst : MonoBehaviour
 
     private static readonly Color[] ConfettiColors =
     {
-        new Color(1.00f, 0.25f, 0.35f), // red
-        new Color(1.00f, 0.60f, 0.10f), // orange
-        new Color(1.00f, 0.88f, 0.15f), // yellow
-        new Color(0.30f, 0.85f, 0.25f), // green
-        new Color(0.15f, 0.75f, 1.00f), // sky blue
-        new Color(0.20f, 0.45f, 1.00f), // blue
-        new Color(0.65f, 0.35f, 1.00f), // purple
-        new Color(1.00f, 0.40f, 0.80f)  // pink
+        new Color(0.85f, 0.65f, 0.30f), new Color(0.95f, 0.85f, 0.60f), new Color(0.62f, 0.42f, 0.22f),
+        new Color(1f, 0.97f, 0.90f), new Color(0.78f, 0.52f, 0.36f), new Color(0.90f, 0.76f, 0.45f)
     };
 
     private RectTransform layer;
