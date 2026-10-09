@@ -33,7 +33,7 @@ public class SplashController : MonoBehaviour
             elapsed += Time.deltaTime;
 
             float k = Mathf.Clamp01(elapsed / loadingDuration);
-            // ease with a couple of natural "hiccups" so it feels like real loading
+            // ease with a couple of natural "hiccups" so it feels like real loadingi
             float progress = Tween.InOutSine(k) * 0.85f + k * 0.15f;
 
             if (loadingBar != null) loadingBar.value = progress;
