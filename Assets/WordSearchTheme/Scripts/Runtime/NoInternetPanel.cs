@@ -17,6 +17,8 @@ public class NoInternetPanel : MonoBehaviour
     private static NoInternetPanel instance;
     private RuntimeUI.Panel panel;
     private bool lastOnline = true;
+    private bool pausedGame;
+    private float savedTimeScale = 1f;
 
     public static bool IsOpen => instance != null && instance.panel != null && instance.panel.root != null && instance.panel.root.activeSelf;
 
@@ -76,12 +78,35 @@ public class NoInternetPanel : MonoBehaviour
             RuntimeUI.PillButton(panel, "Retry", 470, 480, true, "Retry", Retry);
         }
         panel.root.SetActive(true);
+        PauseGame();
         StartCoroutine(RuntimeUI.Pop(panel.card));
     }
 
     private void Hide()
     {
         if (panel != null && panel.root != null) panel.root.SetActive(false);
+        ResumeGame();
+    }
+
+    /// <summary>
+    /// Nothing runs behind the panel: game time and audio stop, and the full-screen backdrop
+    /// (sorting 31000) swallows every touch. The panel itself animates on unscaled time.
+    /// </summary>
+    private void PauseGame()
+    {
+        if (pausedGame) return;
+        pausedGame = true;
+        savedTimeScale = Time.timeScale > 0f ? Time.timeScale : 1f;
+        Time.timeScale = 0f;
+        AudioListener.pause = true;
+    }
+
+    private void ResumeGame()
+    {
+        if (!pausedGame) return;
+        pausedGame = false;
+        Time.timeScale = savedTimeScale;
+        AudioListener.pause = false;
     }
 
     private void Retry()

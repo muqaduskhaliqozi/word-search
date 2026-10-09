@@ -34,6 +34,8 @@ public class SplashController : MonoBehaviour
 
         while (elapsed < loadingDuration)
         {
+            // no internet: the bar stops where it is until the connection is back (NoInternetPanel covers the screen)
+            if (!NoInternetPanel.Online) { yield return null; continue; }
             elapsed += Time.deltaTime;
 
             float k = Mathf.Clamp01(elapsed / loadingDuration);
@@ -59,7 +61,8 @@ public class SplashController : MonoBehaviour
 
         if (loadingBar != null) loadingBar.value = 1f;
 
-        yield return new WaitForSeconds(0.2f);
+        yield return new WaitForSecondsRealtime(0.2f);
+        while (!NoInternetPanel.Online) yield return null; // never leave the splash offline
 
         SceneFader.LoadScene(nextSceneName);
     }

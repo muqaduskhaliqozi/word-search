@@ -811,7 +811,17 @@ public static class SkyThemeBuilder
         Button shop = PicButton(hud, "SK_Shop", "at_btn_bag", Anchor.Top, 862, 90, 0.84f);
         Button settingsTop = PicButton(hud, "SK_SettingsTop", "at_btn_settings", Anchor.Top, 1007, 90, 0.84f);
 
-        TextMeshProUGUI levelText = Label(hud, "SK_LevelText", "Level 1", fredoka, 44, C("2B4457"), Anchor.Middle, 540, 178, 500);
+        // "Level N" belongs to the word card (not the HUD): the HUD follows the notch/safe area, the card does not,
+        // so a HUD label slides into the card on notched phones. Pinned just above the card's top edge instead.
+        Transform oldLevel = hud.Find("SK_LevelText");
+        if (oldLevel != null) oldLevel.gameObject.SetActive(false);
+        RectTransform lvl = Ensure(wordCard.transform, "SK_LevelText");
+        lvl.anchorMin = lvl.anchorMax = new Vector2(0.5f, 1f);
+        lvl.pivot = new Vector2(0.5f, 0f);                 // bottom edge sits above the card face
+        lvl.anchoredPosition = new Vector2(0f, -24f + 10f); // card sprite has a 24px shadow pad; 10px gap
+        lvl.sizeDelta = new Vector2(600f, 64f);
+        lvl.localScale = Vector3.one;
+        TextMeshProUGUI levelText = Txt(lvl.gameObject, "Level 1", fredoka, 44, C("2B4457"), TextAlignmentOptions.Bottom, true);
 
         // bottom bar: Shuffle + Hint only (settings lives in the top bar)
         Button shuffle = PicButton(hud, "SK_Shuffle", "at_game_shuffle", Anchor.Bottom, 403, 1468);
