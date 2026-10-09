@@ -525,7 +525,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4282391570
+    rgba: 4294967295
   m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 1
   m_colorMode: 3
@@ -668,6 +668,62 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 433923438}
   m_CullTransparentMesh: 1
+--- !u!1 &437400795
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 437400797}
+  - component: {fileID: 437400796}
+  m_Layer: 0
+  m_Name: MediationHandler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &437400796
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437400795}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab9a0ba29c4604550b126f794f76d5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TestDevices: []
+  isTestMode: 0
+  isShowBanner: 1
+  isShowBanner2: 0
+  _BannerPosition: 7
+  _BannerPosition2: 1
+  MaxSdkKey: HvHk6ATpuzmHMN1fnTXLJBlPyUuntJd3y_GtvTcyuxlwsRx39uEzXp5BI05Sbyemc3dRz_CBmGmstLQoBNhPdq
+  ApplovinBannerId: bdf65775132f48c2
+  ApplovinBannerId2: fd404905a977b2b7
+  ApplovinInterstitialId: c44c750a9844fcf7
+  ApplovinRewarded: e322476df6348b25
+  AppKey: d5a1fce47992f8bf
+--- !u!4 &437400797
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437400795}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 304.64383, y: 551.6423, z: -0.5865674}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &501248157
 GameObject:
   m_ObjectHideFlags: 0
@@ -1304,7 +1360,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4280371051
   m_fontColor: {r: 0.42, g: 0.28, b: 0.13, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1950,7 +2006,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4280371051
   m_fontColor: {r: 0.42, g: 0.28, b: 0.13, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -2251,7 +2307,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4282391570
+    rgba: 4294967295
   m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 1
   m_colorMode: 3
@@ -2385,7 +2441,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4282391570
+    rgba: 4294967295
   m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 1
   m_colorMode: 3
@@ -2519,7 +2575,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4282391570
+    rgba: 4294967295
   m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 1
   m_colorMode: 3
@@ -3205,3 +3261,4 @@ SceneRoots:
   - {fileID: 1716030210}
   - {fileID: 1132848792}
   - {fileID: 228565560}
+  - {fileID: 437400797}
