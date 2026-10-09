@@ -199,6 +199,8 @@ public class WordSelectionLine : MonoBehaviour
 
     public void Hide()
     {
+        // a hidden bar is free to be used again (restart / next level)
+        IsLocked = false;
         visible = false;
         shaking = false;
         lockPop = -1f;

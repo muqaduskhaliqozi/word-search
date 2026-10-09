@@ -29,6 +29,23 @@ public class WordTarget : MonoBehaviour
     public bool IsCompleted { get; private set; }
     public List<LetterTile> SolutionTiles => solutionTiles;
 
+    /// <summary>Runtime setup used by generated levels.</summary>
+    public void Configure(string word, List<LetterTile> tiles)
+    {
+        targetWord = word;
+        solutionTiles = tiles != null ? new List<LetterTile>(tiles) : new List<LetterTile>();
+        gameObject.name = "WordTarget_" + word;
+        UpdateVisualText();
+
+        // same sizing rule the Nature theme builder uses for chips
+        RectTransform rt = transform as RectTransform;
+        if (rt != null)
+        {
+            float h = rt.sizeDelta.y > 0f ? rt.sizeDelta.y : 70f;
+            rt.sizeDelta = new Vector2(Mathf.Max(130f, 56f + word.Length * 30f), h);
+        }
+    }
+
     private void Awake()
     {
         UpdateVisualText();

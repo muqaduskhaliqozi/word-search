@@ -61,8 +61,7 @@ public class LevelSelectPanel : MonoBehaviour
     {
         get
         {
-            int saved = LevelProgress.LevelCount;
-            return saved > 0 ? saved : levelCount;
+            return Mathf.Max(LevelProgress.LevelCount, levelCount);
         }
     }
 
@@ -114,7 +113,7 @@ public class LevelSelectPanel : MonoBehaviour
             TMP_Text caption = Find<TMP_Text>(b, "NT_Caption");
             if (caption != null)
             {
-                caption.text = locked ? "LOCKED" : (levelTitles != null && i < levelTitles.Length ? levelTitles[i] : "");
+                caption.text = locked ? "LOCKED" : (levelTitles != null && i < levelTitles.Length && !string.IsNullOrEmpty(levelTitles[i]) ? levelTitles[i] : ProceduralLevels.TitleFor(i));
                 caption.alpha = locked ? 0.6f : 1f;
             }
 
@@ -140,9 +139,17 @@ public class LevelSelectPanel : MonoBehaviour
     private IEnumerator IntroRoutine()
     {
         int count = Mathf.Min(Count, buttons.Count);
+        GridLayoutGroup g = content != null ? content.GetComponent<GridLayoutGroup>() : null;
+        int perRow = g != null && g.constraint == GridLayoutGroup.Constraint.FixedColumnCount ? g.constraintCount : 4;
+
+        // only pop the buttons around the current level (500 staggered pops would take ages)
+        int current = Mathf.Clamp(LevelProgress.Unlocked, 0, Mathf.Max(0, count - 1));
+        int first = Mathf.Max(0, (current / perRow - 2) * perRow);
+        int last = Mathf.Min(count - 1, first + perRow * 6);
         for (int i = 0; i < count; i++)
         {
-            StartCoroutine(Pop(buttons[i].transform, 0.2f + i * 0.03f));
+            if (i < first || i > last) { buttons[i].transform.localScale = Vector3.one; continue; }
+            StartCoroutine(Pop(buttons[i].transform, 0.2f + (i - first) * 0.03f));
         }
 
         // scroll so the current level is visible

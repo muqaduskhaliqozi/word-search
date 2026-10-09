@@ -203,6 +203,92 @@ public class WordSearchLevel : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Re-fills this level object with generated content (grid, words, title).
+    /// Call while the object is inactive, then activate + InitializeLevel.
+    /// </summary>
+    public void Rebuild(int number, string title, string[] rows, List<string> words, List<Vector2Int[]> cells)
+    {
+        int n = rows.Length;
+        levelNumber = number;
+        levelTitle = title;
+        enableTutorialHint = false;
+        tutorialHintWord = null;
+
+        // ---------------- tiles
+        GridLayoutGroup grid = GetComponentInChildren<GridLayoutGroup>(true);
+        List<LetterTile> pool = new List<LetterTile>();
+        if (grid != null)
+            foreach (Transform t in grid.transform) { LetterTile lt = t.GetComponent<LetterTile>(); if (lt != null) pool.Add(lt); }
+        if (pool.Count == 0 && letterTiles.Count > 0 && letterTiles[0] != null) pool.Add(letterTiles[0]);
+        if (pool.Count == 0) { Debug.LogError("[WordSearchLevel] Rebuild: no LetterTile to copy."); return; }
+        Transform tileParent = pool[0].transform.parent;
+
+        while (pool.Count < n * n) pool.Add(Instantiate(pool[0].gameObject, tileParent).GetComponent<LetterTile>());
+
+        LetterTile[,] map = new LetterTile[n, n];
+        letterTiles.Clear();
+        for (int i = 0; i < pool.Count; i++)
+        {
+            LetterTile tile = pool[i];
+            bool used = i < n * n;
+            tile.gameObject.SetActive(used);
+            if (!used) continue;
+            int r = i / n, c = i % n;
+            string letter = rows[r][c].ToString();
+            tile.SetLetter(letter, r, c);
+            tile.gameObject.name = $"Tile_{r}_{c}_{letter}";
+            tile.transform.SetSiblingIndex(i);
+            map[r, c] = tile;
+            letterTiles.Add(tile);
+        }
+        if (grid != null)
+        {
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = n;
+        }
+
+        // ---------------- word chips
+        List<WordTarget> chips = new List<WordTarget>();
+        Transform wordParent = null;
+        foreach (WordTarget w in targetWords) if (w != null) { wordParent = w.transform.parent; break; }
+        if (wordParent == null)
+        {
+            WordTarget any = GetComponentInChildren<WordTarget>(true);
+            if (any != null) wordParent = any.transform.parent;
+        }
+        if (wordParent == null) { Debug.LogError("[WordSearchLevel] Rebuild: no WordTarget to copy."); return; }
+        foreach (Transform t in wordParent) { WordTarget w = t.GetComponent<WordTarget>(); if (w != null) chips.Add(w); }
+        while (chips.Count < words.Count) chips.Add(Instantiate(chips[0].gameObject, wordParent).GetComponent<WordTarget>());
+
+        targetWords.Clear();
+        for (int i = 0; i < chips.Count; i++)
+        {
+            bool used = i < words.Count;
+            chips[i].gameObject.SetActive(used);
+            if (!used) continue;
+            List<LetterTile> sol = new List<LetterTile>();
+            foreach (Vector2Int rc in cells[i]) sol.Add(map[rc.x, rc.y]);
+            chips[i].Configure(words[i], sol);
+            chips[i].transform.SetSiblingIndex(i);
+            targetWords.Add(chips[i]);
+        }
+
+        // ---------------- selection lines: one per word + one spare for the drag
+        if (selectionLines.Count > 0 && selectionLines[0] != null)
+        {
+            while (selectionLines.Count < words.Count + 1)
+            {
+                GameObject copy = Instantiate(selectionLines[0].gameObject, selectionLines[0].transform.parent);
+                copy.name = "Line-" + (selectionLines.Count + 1).ToString("00");
+                selectionLines.Add(copy.GetComponent<WordSelectionLine>());
+            }
+        }
+
+        if (levelTitleText != null) levelTitleText.text = levelTitle;
+        gameObject.name = $"Generated_Level_{number:000}_{title}";
+    }
+
     public void SetSharedCompletePanel(GameObject panel)
     {
         levelCompletePanel = panel;

@@ -16,10 +16,10 @@ public static class LevelProgress
         set { PlayerPrefs.SetInt(UnlockedKey, Mathf.Max(0, value)); PlayerPrefs.Save(); }
     }
 
-    /// <summary>Total levels in GamePlay (written by LevelManager, 0 if the game was never opened).</summary>
+    /// <summary>Total levels in GamePlay (hand-made + generated, see ProceduralLevels.TotalLevels).</summary>
     public static int LevelCount
     {
-        get => PlayerPrefs.GetInt(CountKey, 0);
+        get => Mathf.Max(PlayerPrefs.GetInt(CountKey, 0), ProceduralLevels.TotalLevels);
         set { PlayerPrefs.SetInt(CountKey, value); PlayerPrefs.Save(); }
     }
 

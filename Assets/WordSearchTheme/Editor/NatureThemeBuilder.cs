@@ -809,6 +809,7 @@ public static partial class NatureThemeBuilder
             TextMeshProUGUI bannerText = BuildPlank(banner, banner.sizeDelta, "Level 1", 70, S("plank"), 150f);
             // use the original level text object so LevelManager keeps working
             Transform lt = tb.Find("leveltxt");
+            if (lt == null) lt = banner.Find("leveltxt"); // already moved here by a previous run
             if (lt != null)
             {
                 lt.SetParent(banner, false);

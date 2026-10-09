@@ -37,7 +37,9 @@ public class LevelManager : MonoBehaviour
 
     public int CurrentLevelIndex => currentLevelIndex;
     public int CurrentLevelNumber => currentLevelIndex + 1;
-    public int LevelCount => levels != null ? levels.Count : 0;
+    /// <summary>Total playable levels: hand-made scene levels first, then generated ones.</summary>
+    public int LevelCount => Mathf.Max(SceneLevelCount, ProceduralLevels.TotalLevels);
+    private int SceneLevelCount => levels != null ? levels.Count : 0;
     public WordSearchLevel ActiveLevel => activeLevelScript;
 
     /// <summary>Raised every time a level is (re)started.</summary>
@@ -48,21 +50,24 @@ public class LevelManager : MonoBehaviour
     private WordSearchLevel activeLevelScript;
     private WordSearchLevel hookedLevel;
     private int lastNextFrame = -1;
+    private WordSearchLevel proceduralHost;
 
     private void Start()
     {
+        ResolveLevelText();
+
         if (levels != null && levels.Count > 0)
         {
-            LevelProgress.LevelCount = levels.Count;
+            LevelProgress.LevelCount = LevelCount;
 
             if (LevelProgress.TryConsumeRequestedLevel(out int requested))
             {
                 // chosen from the Main Menu / Level Select (never past the furthest unlocked level)
-                currentLevelIndex = Mathf.Clamp(requested, 0, Mathf.Min(levels.Count - 1, LevelProgress.Unlocked));
+                currentLevelIndex = Mathf.Clamp(requested, 0, Mathf.Min(LevelCount - 1, LevelProgress.Unlocked));
             }
             else if (saveProgress)
             {
-                currentLevelIndex = Mathf.Clamp(PlayerPrefs.GetInt(ProgressKey, currentLevelIndex), 0, levels.Count - 1);
+                currentLevelIndex = Mathf.Clamp(PlayerPrefs.GetInt(ProgressKey, currentLevelIndex), 0, LevelCount - 1);
             }
         }
 
@@ -79,22 +84,36 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
-        if (currentLevelIndex < 0 || currentLevelIndex >= levels.Count)
+        if (currentLevelIndex < 0 || currentLevelIndex >= LevelCount)
         {
             Debug.LogWarning($"[LevelManager] Level index {currentLevelIndex} out of range! Resetting to Level 1.");
             currentLevelIndex = 0;
         }
 
-        // Activate only the current level GameObject
+        bool generated = currentLevelIndex >= SceneLevelCount;
+
+        // Deactivate everything first, then show only the current level
         for (int i = 0; i < levels.Count; i++)
         {
-            if (levels[i] != null)
-            {
-                levels[i].SetActive(i == currentLevelIndex);
-            }
+            if (levels[i] != null) levels[i].SetActive(false);
         }
+        if (proceduralHost != null) proceduralHost.gameObject.SetActive(false);
 
-        GameObject currentLevel = levels[currentLevelIndex];
+        GameObject currentLevel;
+        if (generated)
+        {
+            WordSearchLevel host = GetProceduralHost();
+            if (host == null) return;
+            int size = GridSizeOf(host);
+            ProceduralLevels.Data data = ProceduralLevels.Generate(currentLevelIndex, size, SceneLevelCount);
+            host.Rebuild(CurrentLevelNumber, data.title, data.rows, data.words, data.cells);
+            currentLevel = host.gameObject;
+        }
+        else
+        {
+            currentLevel = levels[currentLevelIndex];
+        }
+        if (currentLevel != null) currentLevel.SetActive(true);
         if (currentLevel == null)
         {
             Debug.LogWarning($"[LevelManager] Level at index {currentLevelIndex} is null!");
@@ -137,7 +156,7 @@ public class LevelManager : MonoBehaviour
 
         LevelStarted?.Invoke(activeLevelScript);
 
-        Debug.Log($"[LevelManager] Active Level: {currentLevelIndex + 1} of {levels.Count} " +
+        Debug.Log($"[LevelManager] Active Level: {currentLevelIndex + 1} of {LevelCount} " +
                   $"(object: {currentLevel.name}, title: {activeLevelScript.LevelTitle})");
     }
 
@@ -167,7 +186,7 @@ public class LevelManager : MonoBehaviour
 
         int nextIndex = currentLevelIndex + 1;
 
-        if (nextIndex >= levels.Count)
+        if (nextIndex >= LevelCount)
         {
             if (!loopToFirstLevel)
             {
@@ -208,10 +227,65 @@ public class LevelManager : MonoBehaviour
 
     private void UpdateLevelText()
     {
+        if (levelText == null || !levelText.gameObject.activeInHierarchy) ResolveLevelText();
         if (levelText != null)
         {
             levelText.text = string.Format(levelTextFormat, CurrentLevelNumber);
         }
+    }
+
+    /// <summary>
+    /// Safety net: if the assigned text is missing or hidden (e.g. the theme builder wired a hidden copy),
+    /// use the visible "leveltxt" label in the top bar instead.
+    /// </summary>
+    private void ResolveLevelText()
+    {
+        if (levelText != null && levelText.gameObject.activeInHierarchy) return;
+        foreach (TextMeshProUGUI t in FindObjectsOfType<TextMeshProUGUI>())
+        {
+            if (t.gameObject.name == "leveltxt" && t.gameObject.activeInHierarchy)
+            {
+                levelText = t;
+                return;
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ generated levels
+    /// <summary>One reusable level object (a copy of the last scene level) that every generated level is built into.</summary>
+    private WordSearchLevel GetProceduralHost()
+    {
+        if (proceduralHost != null) return proceduralHost;
+
+        WordSearchLevel source = null;
+        for (int i = levels.Count - 1; i >= 0 && source == null; i--)
+        {
+            WordSearchLevel l = levels[i] != null ? levels[i].GetComponent<WordSearchLevel>() : null;
+            if (l != null && l.GetComponentInChildren<LetterTile>(true) != null && l.GetComponentInChildren<WordTarget>(true) != null)
+                source = l;
+        }
+        if (source == null)
+        {
+            Debug.LogError("[LevelManager] No scene level to copy for generated levels.");
+            return null;
+        }
+
+        bool wasActive = source.gameObject.activeSelf;
+        source.gameObject.SetActive(false); // so the copy is created inactive
+        GameObject copy = Instantiate(source.gameObject, source.transform.parent);
+        source.gameObject.SetActive(wasActive);
+        copy.name = "Generated_Level";
+        proceduralHost = copy.GetComponent<WordSearchLevel>();
+        return proceduralHost;
+    }
+
+    private static int GridSizeOf(WordSearchLevel level)
+    {
+        GridLayoutGroup grid = level.GetComponentInChildren<GridLayoutGroup>(true);
+        if (grid != null && grid.constraint == GridLayoutGroup.Constraint.FixedColumnCount && grid.constraintCount > 0)
+            return grid.constraintCount;
+        int tiles = level.GetComponentsInChildren<LetterTile>(true).Length;
+        return Mathf.Max(6, Mathf.RoundToInt(Mathf.Sqrt(tiles)));
     }
 
     private void HideCompletePanel()
