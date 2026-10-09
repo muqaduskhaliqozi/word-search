@@ -38,10 +38,19 @@ public static class GameSettings
     }
 
     /// <summary>Set this to true from your purchase code when "Remove Ads" is bought.</summary>
+    /// <summary>"RemoveAds" is the key MediationHandler checks before loading/showing banners and interstitials.</summary>
+    public const string MediationRemoveAdsKey = "RemoveAds";
+
     public static bool AdsRemoved
     {
-        get => PlayerPrefs.GetInt(AdsRemovedKey, 0) == 1;
-        set { PlayerPrefs.SetInt(AdsRemovedKey, value ? 1 : 0); PlayerPrefs.Save(); Changed?.Invoke(); }
+        get => PlayerPrefs.GetInt(AdsRemovedKey, 0) == 1 || PlayerPrefs.GetInt(MediationRemoveAdsKey, 0) == 1;
+        set
+        {
+            PlayerPrefs.SetInt(AdsRemovedKey, value ? 1 : 0);
+            PlayerPrefs.SetInt(MediationRemoveAdsKey, value ? 1 : 0);
+            PlayerPrefs.Save();
+            Changed?.Invoke();
+        }
     }
 
     /// <summary>Short buzz if the player has vibration on.</summary>
@@ -130,7 +139,8 @@ public class SkyMenu : MonoBehaviour
         Hook(settingsPrivacyButton, () => OpenUrl(privacyPolicyUrl));
         Hook(termsButton, () => OpenUrl(termsUrl));
 
-        if (priceText != null) priceText.text = price;
+        if (priceText != null) priceText.text = !string.IsNullOrEmpty(IAPManager.RemoveAdsPrice) ? IAPManager.RemoveAdsPrice : price;
+        IAPManager.PriceUpdated += OnPriceUpdated;
         if (settingsScreen != null)
         {
             settingsGroup = settingsScreen.GetComponent<CanvasGroup>();
@@ -146,6 +156,12 @@ public class SkyMenu : MonoBehaviour
     private void OnDestroy()
     {
         GameSettings.Changed -= RefreshAds;
+        IAPManager.PriceUpdated -= OnPriceUpdated;
+    }
+
+    private void OnPriceUpdated(string localizedPrice)
+    {
+        if (priceText != null && !string.IsNullOrEmpty(localizedPrice)) priceText.text = localizedPrice;
     }
 
     private void Update()

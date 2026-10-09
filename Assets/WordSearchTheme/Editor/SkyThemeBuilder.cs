@@ -768,9 +768,14 @@ public static class SkyThemeBuilder
 
         TextMeshProUGUI levelText = Label(hud, "SK_LevelText", "Level 1", fredoka, 44, C("2B4457"), Anchor.Middle, 540, 178, 500);
 
-        Button shuffle = PicButton(hud, "SK_Shuffle", "at_game_shuffle", Anchor.Bottom, 271, 1468);
-        Button hint = PicButton(hud, "SK_Hint", "at_game_hint", Anchor.Bottom, 545, 1468);
-        Button settingsBottom = PicButton(hud, "SK_SettingsBottom", "at_game_settings", Anchor.Bottom, 809, 1468);
+        // bottom bar: Shuffle + Hint only (settings lives in the top bar)
+        Button shuffle = PicButton(hud, "SK_Shuffle", "at_game_shuffle", Anchor.Bottom, 403, 1468);
+        Button hint = PicButton(hud, "SK_Hint", "at_game_hint", Anchor.Bottom, 677, 1468);
+        Transform oldSettings = hud.Find("SK_SettingsBottom");
+        if (oldSettings != null) oldSettings.gameObject.SetActive(false);
+        TextMeshProUGUI shuffleCount, hintCount;
+        Image shuffleBadge = PowerBadge((RectTransform)shuffle.transform, out shuffleCount);
+        Image hintBadge = PowerBadge((RectTransform)hint.transform, out hintCount);
 
         // ---------------- popups
         TextMeshProUGUI rewardText = StyleCompleteSky(completePanel);
@@ -806,8 +811,14 @@ public static class SkyThemeBuilder
         SetArray(h, "hintButtons", new Object[] { hint });
         SetArray(h, "hintCountTexts", new Object[0]);
         SetField(h, "shuffleButton", shuffle);
-        SetField(h, "settingsButton", settingsBottom);
-        SetArray(h, "moreSettingsButtons", new Object[] { settingsTop });
+        SetField(h, "settingsButton", settingsTop);
+        SetArray(h, "moreSettingsButtons", new Object[0]);
+        SetField(h, "hintBadge", hintBadge);
+        SetField(h, "hintBadgeText", hintCount);
+        SetField(h, "shuffleBadge", shuffleBadge);
+        SetField(h, "shuffleBadgeText", shuffleCount);
+        SetColor(h, "badgeCountColor", C("1565D8"));
+        SetColor(h, "badgeAdColor", C("4CAF1A"));
         SetField(h, "settingsPopup", settingsPopup);
         SetField(h, "settingsCloseButton", sClose);
         SetField(h, "settingsHomeButton", sHome);
@@ -824,6 +835,21 @@ public static class SkyThemeBuilder
         SetField(h, "noAdsButton", noAds);
         SetField(h, "levelRewardText", rewardText);
         EditorUtility.SetDirty(h);
+    }
+
+    /// <summary>Round badge on the top-right corner of a power-up button: uses left, or "AD" when empty.</summary>
+    private static Image PowerBadge(RectTransform button, out TextMeshProUGUI count)
+    {
+        RectTransform b = Ensure(button, "SK_Badge");
+        b.anchorMin = b.anchorMax = new Vector2(1f, 1f); b.pivot = new Vector2(0.5f, 0.5f);
+        b.anchoredPosition = new Vector2(-14, -14); b.sizeDelta = new Vector2(72, 72); b.localScale = Vector3.one;
+        Image img = Img(b.gameObject, S("sk_badge_white"));
+        img.color = C("1565D8");
+        RectTransform t = Stretch(Ensure(b, "SK_Count"), 4, 4, 4, 2);
+        count = Txt(t.gameObject, "3", fredoka, 44, Color.white, TextAlignmentOptions.Center, true);
+        count.fontSizeMin = 26f;
+        b.SetAsLastSibling();
+        return img;
     }
 
     private static void StyleLevelSky(WordSearchLevel level)
