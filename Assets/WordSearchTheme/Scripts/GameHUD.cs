@@ -131,6 +131,8 @@ public class GameHUD : MonoBehaviour
         // LevelManager.Start may already have run before we subscribed.
         if (levelManager != null && levelManager.ActiveLevel != null)
         {
+            if (levelManager.CurrentLevelIndex == 0 && !Tutorial.Done)
+                Tutorial.Begin(levelManager.ActiveLevel, (RectTransform)transform);
             Hook(levelManager.ActiveLevel);
             FitBoard(levelManager.ActiveLevel, false);
         }
@@ -140,6 +142,8 @@ public class GameHUD : MonoBehaviour
     private void OnLevelStarted(WordSearchLevel level)
     {
         Hook(level);
+        if (levelManager != null && levelManager.CurrentLevelIndex == 0 && !Tutorial.Done)
+            Tutorial.Begin(level, (RectTransform)transform);
         if (levelBanner != null && isActiveAndEnabled) StartCoroutine(BannerPop());
         FitBoard(level, isActiveAndEnabled);
     }
@@ -308,6 +312,7 @@ public class GameHUD : MonoBehaviour
     {
         WordSearchLevel level = levelManager != null ? levelManager.ActiveLevel : null;
         if (level == null) return;
+        if (Tutorial.Active) { if (source != null) StartCoroutine(Shake(source.transform)); return; } // boosters unlock after the tutorial
 
         if (Uses(HintUsesKey) <= 0)
         {
@@ -326,6 +331,7 @@ public class GameHUD : MonoBehaviour
     {
         WordSearchLevel level = levelManager != null ? levelManager.ActiveLevel : null;
         if (level == null) return;
+        if (Tutorial.Active) { if (shuffleButton != null) StartCoroutine(Shake(shuffleButton.transform)); return; }
         if (Uses(ShuffleUsesKey) <= 0)
         {
             WatchAdToRefill(ShuffleUsesKey, shuffleButton != null ? shuffleButton.transform : null);

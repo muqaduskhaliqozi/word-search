@@ -241,6 +241,7 @@ public static class SkyThemeBuilder
         res.noAdsBadge = S("at_noads");
         res.logo = S("at_logo");
         res.coin = S("at_coin");
+        res.hand = S("sk_hand");
         EditorUtility.SetDirty(res);
         AssetDatabase.SaveAssets();
     }

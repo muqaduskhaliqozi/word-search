@@ -16,6 +16,8 @@ public class SplashController : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private float loadingDuration = 6f;
     [SerializeField] private string nextSceneName = "MainMenu";
+    [SerializeField] private string gameSceneName = "GamePlay";
+    public const string FirstSessionKey = "WS_FirstSessionStarted";
 
     private void Start()
     {
@@ -64,6 +66,15 @@ public class SplashController : MonoBehaviour
         yield return new WaitForSecondsRealtime(0.2f);
         while (!NoInternetPanel.Online) yield return null; // never leave the splash offline
 
-        SceneFader.LoadScene(nextSceneName);
+        // First session ever: straight into level 1 (tutorial). Every later session: the main menu.
+        string target = nextSceneName;
+        if (PlayerPrefs.GetInt(FirstSessionKey, 0) == 0)
+        {
+            PlayerPrefs.SetInt(FirstSessionKey, 1);
+            PlayerPrefs.Save();
+            LevelProgress.RequestLevel(0);
+            target = gameSceneName;
+        }
+        SceneFader.LoadScene(target);
     }
 }

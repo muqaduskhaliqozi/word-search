@@ -93,10 +93,10 @@ public class SkyMenu : MonoBehaviour
     [SerializeField] private Button termsButton;
 
     [Header("Links (fill these in)")]
-    [SerializeField] private string privacyPolicyUrl = "https://example.com/privacy";
-    [SerializeField] private string termsUrl = "https://example.com/terms";
-    [Tooltip("Your Google Play developer page, e.g. https://play.google.com/store/apps/dev?id=XXXX")]
-    [SerializeField] private string moreGamesUrl = "https://play.google.com/store/apps/developer?id=YOUR_DEV_NAME";
+    [SerializeField] private string privacyPolicyUrl = "https://desertsafaristudio.com/privacypolicy/privacy.html";
+    [SerializeField] private string termsUrl = "https://desertsafaristudio.com/terms/terms.html";
+    [Tooltip("Your Google Play developer page, e.g. https://play.google.com/store/apps/dev?id=4877289508094635033&hl=en")]
+    [SerializeField] private string moreGamesUrl = "https://play.google.com/store/apps/dev?id=4877289508094635033&hl=en";
 
     [Header("Hooks for your SDKs")]
     [Tooltip("Called when the player taps Remove Ads / the price button. Start your in-app purchase here.")]

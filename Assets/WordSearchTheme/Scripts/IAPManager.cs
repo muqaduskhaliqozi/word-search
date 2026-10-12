@@ -24,6 +24,7 @@ public class IAPManager : MonoBehaviour
     private bool connected;
     private bool connecting;
     private bool buyWhenReady;
+    private int productRetries;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap()
@@ -59,13 +60,22 @@ public class IAPManager : MonoBehaviour
         {
             store = UnityIAPServices.StoreController();
             store.OnProductsFetched += OnProductsFetched;
-            store.OnProductsFetchFailed += f => Debug.LogWarning("[IAP] Product fetch failed: " + f.FailureReason);
+            store.OnProductsFetchFailed += f =>
+            {
+                Debug.LogWarning("[IAP] Product fetch failed: " + f.FailureReason);
+                if (buyWhenReady) { buyWhenReady = false; IAPLoading.Hide("Store is not available right now. Please try again."); }
+            };
             store.OnPurchasesFetched += OnPurchasesFetched;
             store.OnPurchasesFetchFailed += f => Debug.LogWarning("[IAP] Purchase fetch failed: " + f.Message);
             store.OnPurchasePending += OnPurchasePending;
             store.OnPurchaseConfirmed += OnPurchaseConfirmed;
             store.OnPurchaseFailed += OnPurchaseFailed;
-            store.OnStoreDisconnected += d => { connected = false; Debug.LogWarning("[IAP] Store disconnected: " + d.Message); };
+            store.OnStoreDisconnected += d =>
+            {
+                connected = false;
+                Debug.LogWarning("[IAP] Store disconnected: " + d.Message);
+                if (buyWhenReady) { buyWhenReady = false; IAPLoading.Hide("Store is not available right now. Please try again."); }
+            };
 
             await store.Connect();
             connected = true;
@@ -75,6 +85,7 @@ public class IAPManager : MonoBehaviour
         {
             connected = false;
             Debug.LogWarning("[IAP] Could not connect to the store: " + e.Message);
+            if (buyWhenReady) { buyWhenReady = false; IAPLoading.Hide("Couldn't connect to the store. Check your connection and try again."); }
         }
         finally
         {
@@ -122,6 +133,8 @@ public class IAPManager : MonoBehaviour
     private void OnPurchaseFailed(FailedOrder order)
     {
         Debug.LogWarning($"[IAP] Purchase failed: {order.FailureReason} {order.Details}");
+        bool cancelled = order.FailureReason == PurchaseFailureReason.UserCancelled;
+        IAPLoading.Hide(cancelled ? null : "Purchase failed. Please try again.");
         PurchaseFinished?.Invoke(false, order.FailureReason.ToString());
     }
 
@@ -139,7 +152,8 @@ public class IAPManager : MonoBehaviour
     /// <summary>Starts the Remove Ads purchase (hooked to every Remove Ads / No-Ads button).</summary>
     public void BuyRemoveAds()
     {
-        if (GameSettings.AdsRemoved) { PurchaseFinished?.Invoke(true, "Already purchased"); return; }
+        if (GameSettings.AdsRemoved) { IAPLoading.Hide(); PurchaseFinished?.Invoke(true, "Already purchased"); return; }
+        IAPLoading.Show(); // immediate feedback; closed by the purchase result (bought / cancelled / failed)
         if (!connected || store == null)
         {
             buyWhenReady = true;
@@ -150,11 +164,29 @@ public class IAPManager : MonoBehaviour
         if (p == null || !p.availableToPurchase)
         {
             Debug.LogWarning("[IAP] Remove Ads product is not available yet. Is it active in Google Play Console?");
+            if (productRetries >= 1)
+            {
+                // already re-fetched once: stop (this used to loop forever) and tell the player
+                productRetries = 0;
+                buyWhenReady = false;
+                IAPLoading.Hide("Remove Ads is not available right now. Please try again later.");
+                return;
+            }
+            productRetries++;
             buyWhenReady = true;
             store.FetchProducts(new List<ProductDefinition> { new ProductDefinition(RemoveAdsId, ProductType.NonConsumable) });
             return;
         }
-        store.PurchaseProduct(p);
+        productRetries = 0;
+        try
+        {
+            store.PurchaseProduct(p);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[IAP] PurchaseProduct threw: " + e.Message);
+            IAPLoading.Hide("Purchase failed. Please try again.");
+        }
     }
 
     /// <summary>Manual restore (needed on iOS; Google Play restores automatically on start).</summary>
@@ -166,6 +198,7 @@ public class IAPManager : MonoBehaviour
 
     private void Grant(bool justBought)
     {
+        IAPLoading.Hide();
         if (!GameSettings.AdsRemoved) GameSettings.AdsRemoved = true;
         if (MediationHandler.Instance != null) MediationHandler.Instance.RemoveAdsPurchased(); // tear down live banners
         if (justBought)

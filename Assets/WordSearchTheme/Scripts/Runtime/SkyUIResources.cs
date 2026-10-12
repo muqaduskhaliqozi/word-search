@@ -17,6 +17,7 @@ public class SkyUIResources : ScriptableObject
     public Sprite noAdsBadge;
     public Sprite logo;
     public Sprite coin;
+    public Sprite hand;               // tutorial pointer
 
     private static SkyUIResources cached;
     public static SkyUIResources Get()

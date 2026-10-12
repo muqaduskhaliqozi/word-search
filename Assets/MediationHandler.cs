@@ -102,6 +102,7 @@ public class MediationHandler : MonoBehaviour
 
         _isLowRamDevice = SystemInfo.systemMemorySize < LowRamThresholdMB;
 
+        Debug.Log("[Ads] device RAM " + SystemInfo.systemMemorySize + " MB, low-RAM mode: " + _isLowRamDevice);
         if (_isLowRamDevice)
         {
 #if UNITY_EDITOR
@@ -132,6 +133,9 @@ public class MediationHandler : MonoBehaviour
             Debug.LogError("MaxSDK InitSuccess");
 #endif
             _maxSdkReady = true;
+            Debug.Log("[Ads] MAX initialized - starting SolarEngine/Firebase, ads load when they report back (max 15s)");
+            // Safety net: analytics must never be able to block ads.
+            Invoke(nameof(ForceAdLoading), 15f);
 
             // Start SolarEngine now that MaxAppLovin is fully ready.
             // Small delay lets the main thread settle before the next SDK init.
@@ -144,6 +148,18 @@ public class MediationHandler : MonoBehaviour
             MaxSdk.SetTestDeviceAdvertisingIdentifiers(TestDevices);
         MaxSdk.SetSdkKey(MaxSdkKey);
         MaxSdk.InitializeSdk();
+        Debug.Log("[Ads] MAX InitializeSdk called");
+    }
+
+    /// <summary>Starts ad loading even if SolarEngine/Firebase never reported ready.</summary>
+    private void ForceAdLoading()
+    {
+        if (_adLoadingStarted) return;
+        Debug.LogWarning("[Ads] SolarEngine ready=" + _solarEngineReady + ", Firebase ready=" + _firebaseReady +
+                         " after 15s - loading ads anyway");
+        _solarEngineReady = true;
+        _firebaseReady = true;
+        OnAllSDKsReady();
     }
 
     // Called once all three SDKs have signalled ready.
@@ -152,9 +168,9 @@ public class MediationHandler : MonoBehaviour
     {
         if (_adLoadingStarted) return;
         if (!_maxSdkReady || !_solarEngineReady || !_firebaseReady) return;
-        if (Application.internetReachability == NetworkReachability.NotReachable) return;
 
         _adLoadingStarted = true;
+        Debug.Log("[Ads] all SDKs ready - loading ads");
 #if UNITY_EDITOR
         Debug.LogError("All SDKs ready — starting ad cache");
 #endif
@@ -166,18 +182,25 @@ public class MediationHandler : MonoBehaviour
     private IEnumerator LoadAdsSequentially()
     {
         // Buffer after SDK init before touching any ad network
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSecondsRealtime(2f);
+        // offline right now: wait for the connection instead of never loading this session
+        while (Application.internetReachability == NetworkReachability.NotReachable)
+            yield return new WaitForSecondsRealtime(2f);
 
         if (!IsRemoveAds())
         {
             LoadInterstitialAds();
-            yield return new WaitForSeconds(3f);
+            yield return new WaitForSecondsRealtime(3f);
 
             InitializeSmallBanner();
-            yield return new WaitForSeconds(3f);
+            yield return new WaitForSecondsRealtime(3f);
 
-            InitializeSmallBanner2();
-            yield return new WaitForSeconds(3f);
+            // banner 2 only when it is a real, different ad unit (same id would re-create banner 1 at banner 2's position)
+            if (!string.IsNullOrEmpty(ApplovinBannerId2) && ApplovinBannerId2 != ApplovinBannerId)
+            {
+                InitializeSmallBanner2();
+                yield return new WaitForSecondsRealtime(3f);
+            }
         }
 
         InitializeRewardedAds();
@@ -193,6 +216,21 @@ public class MediationHandler : MonoBehaviour
         Debug.LogError("Initial Solar Engine");
 #endif
 
+        try
+        {
+            InitializeSolarEngineInternal();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("[Ads] SolarEngine init failed (ads continue): " + e);
+        }
+        _solarEngineReady = true;
+        // Firebase init is the last step — OnAllSDKsReady is called from there
+        FireBaseInitilization();
+    }
+
+    private void InitializeSolarEngineInternal()
+    {
         Analytics.preInitSeSdk(AppKey);
         SEConfig seConfig = new SEConfig();
 #if UNITY_EDITOR
@@ -219,12 +257,9 @@ public class MediationHandler : MonoBehaviour
             Debug.LogError("This is an EU User — Show Consent Form");
 #endif
         }
-        _solarEngineReady = true;
 #if UNITY_EDITOR
         Debug.LogError("SolarEngine ready");
 #endif
-        // Firebase init is the last step — OnAllSDKsReady is called from there
-        FireBaseInitilization();
     }
 
     #endregion
@@ -298,6 +333,7 @@ public class MediationHandler : MonoBehaviour
 
     private void OnBannerAdFailedEvent(string adUnitId, MaxSdkBase.ErrorInfo errorInfo)
     {
+        Debug.LogWarning("[Ads] banner load failed: " + errorInfo.Code + " " + errorInfo.Message);
 #if UNITY_EDITOR
         Debug.LogError("Banner1 ad failed to load with error code: " + errorInfo.Code);
 #endif
@@ -493,6 +529,7 @@ public class MediationHandler : MonoBehaviour
 #endif
 
         _interstitialRetryAttempt = 0;
+        Debug.Log("[Ads] interstitial loaded (" + adInfo.NetworkName + ")");
         MaxSdkCallbacks.Interstitial.OnAdLoadedEvent -= OnInterstitialLoadedEvent;
     }
     private void OnInterstitialDisplayed(string adUnitId, MaxSdkBase.AdInfo adInfo)
@@ -514,6 +551,7 @@ public class MediationHandler : MonoBehaviour
 
     private void OnInterstitialFailedEvent(string adUnitId, MaxSdkBase.ErrorInfo errorInfo)
     {
+        Debug.LogWarning("[Ads] interstitial load failed: " + errorInfo.Code + " " + errorInfo.Message);
 
         _interstitialRetryAttempt++;
         double retryDelay = Math.Pow(2, Math.Min(6, _interstitialRetryAttempt));
@@ -636,11 +674,13 @@ public class MediationHandler : MonoBehaviour
 #endif
 
         _rewardedRetryAttempt = 0;
+        Debug.Log("[Ads] rewarded loaded (" + adInfo.NetworkName + ")");
     }
 
 
     private void OnRewardedAdFailedEvent(string adUnitId, MaxSdkBase.ErrorInfo errorInfo)
     {
+        Debug.LogWarning("[Ads] rewarded load failed: " + errorInfo.Code + " " + errorInfo.Message);
         _rewardedRetryAttempt++;
         double retryDelay = Math.Pow(2, Math.Min(6, _rewardedRetryAttempt));
 #if UNITY_EDITOR
@@ -802,22 +842,46 @@ public class MediationHandler : MonoBehaviour
     {
         // ContinueWithOnMainThread ensures the callback runs on Unity's main thread,
         // which is required before calling StartCoroutine or any Unity API.
-        Firebase.FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
+        try
         {
-            _dependencyStatus = task.Result;
-            if (_dependencyStatus == Firebase.DependencyStatus.Available)
+            Firebase.FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
             {
-                FirebaseAnalytics.SetAnalyticsCollectionEnabled(true);
-                var app = Firebase.FirebaseApp.DefaultInstance;
-                RemoteValues.Instance.Initialize();
-            }
-            else
-            {
-#if UNITY_EDITOR
-                UnityEngine.Debug.LogError(System.String.Format(
-                  "Could not resolve all Firebase dependencies: {0}", _dependencyStatus));
-#endif
-            }
+                try
+                {
+                    _dependencyStatus = task.IsFaulted || task.IsCanceled ? Firebase.DependencyStatus.UnavailableOther : task.Result;
+                    if (_dependencyStatus == Firebase.DependencyStatus.Available)
+                    {
+                        FirebaseAnalytics.SetAnalyticsCollectionEnabled(true);
+                        var app = Firebase.FirebaseApp.DefaultInstance;
+                        // RemoteValues is not placed in any scene: create it if missing (this NRE used to stop all ads)
+                        if (RemoteValues.Instance == null)
+                            new GameObject("RemoteValues").AddComponent<RemoteValues>();
+                        RemoteValues.Instance.Initialize();
+                        Debug.Log("[Ads] Firebase ready");
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[Ads] Firebase dependencies unavailable: " + _dependencyStatus + " (ads continue)");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("[Ads] Firebase init error (ads continue): " + e);
+                }
+                FirebaseDone();
+            });
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("[Ads] Firebase init threw (ads continue): " + e);
+            FirebaseDone();
+        }
+    }
+
+    private void FirebaseDone()
+    {
+        if (_firebaseReady) return;
+        {
 
             // Mark Firebase ready and attempt to start ad loading.
             // OnAllSDKsReady will only proceed once Max and SolarEngine are also done.
@@ -826,7 +890,7 @@ public class MediationHandler : MonoBehaviour
             Debug.LogError("Firebase ready");
 #endif
             OnAllSDKsReady();
-        });
+        }
     }
 
     public void LogEvent(string name)

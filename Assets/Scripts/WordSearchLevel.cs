@@ -50,6 +50,7 @@ public class WordSearchLevel : MonoBehaviour
     public string LevelTitle => levelTitle;
     public Button NextButton => nextButton;
     public bool IsLevelDone => levelDone;
+    public IReadOnlyList<WordTarget> TargetWords => targetWords;
 
     /// <summary>Raised when a word is found (word, tiles).</summary>
     public event Action<WordTarget, List<LetterTile>> WordFound;
@@ -59,6 +60,15 @@ public class WordSearchLevel : MonoBehaviour
     private readonly List<LetterTile> currentPath = new List<LetterTile>();
     private readonly Dictionary<(int, int), LetterTile> tileGrid = new Dictionary<(int, int), LetterTile>();
     private readonly List<LetterTile> tutorialHintTiles = new List<LetterTile>();
+    private HashSet<LetterTile> inputLock; // tutorial: only these tiles can start / be part of a selection
+
+    /// <summary>Tutorial input lock: only these tiles respond (null = whole board, empty = nothing).</summary>
+    public void SetInputLock(IEnumerable<LetterTile> allowed)
+    {
+        inputLock = allowed == null ? null : new HashSet<LetterTile>(allowed);
+    }
+
+    private bool Locked(LetterTile tile) => inputLock != null && !inputLock.Contains(tile);
 
     private bool isSelecting;
     private bool hintActive;
@@ -327,6 +337,16 @@ public class WordSearchLevel : MonoBehaviour
         }
     }
 
+    /// <summary>Pulses the letters of a specific word (tutorial steps).</summary>
+    public void ShowTutorialHint(WordTarget word)
+    {
+        ClearTutorialHint();
+        WordTarget previous = tutorialHintWord;
+        tutorialHintWord = word;
+        ShowTutorialHint();
+        tutorialHintWord = previous;
+    }
+
     public void ClearTutorialHint()
     {
         if (!hintActive) return;
@@ -468,6 +488,7 @@ public class WordSearchLevel : MonoBehaviour
     public void OnTilePointerDown(LetterTile tile)
     {
         if (tile == null || wrongAnimationPlaying || levelDone) return;
+        if (Locked(tile)) return; // tutorial: other letters are not playable yet
 
         ClearTutorialHint();
         ClearCurrentSelection();
@@ -563,6 +584,7 @@ public class WordSearchLevel : MonoBehaviour
             {
                 if (!tileGrid.TryGetValue((startTile.Row + bestDir.x * i, startTile.Column + bestDir.y * i), out LetterTile t))
                     break;
+                if (Locked(t)) break; // tutorial: the selection can't run past the highlighted word
 
                 newPath.Add(t);
             }

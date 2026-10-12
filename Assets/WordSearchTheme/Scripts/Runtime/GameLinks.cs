@@ -4,10 +4,10 @@
 /// </summary>
 public static class GameLinks
 {
-    public const string PrivacyPolicy = "https://example.com/privacy";
-    public const string TermsOfService = "https://example.com/terms";
+    public const string PrivacyPolicy = "https://desertsafaristudio.com/privacypolicy/privacy.html";
+    public const string TermsOfService = "https://desertsafaristudio.com/privacypolicy/privacy.html";
     /// <summary>Your Google Play developer page.</summary>
-    public const string MoreGames = "https://play.google.com/store/apps/developer?id=YOUR_DEV_NAME";
+    public const string MoreGames = "https://play.google.com/store/apps/dev?id=4877289508094635033&hl=en";
 
     public static void Open(string url, string what)
     {
