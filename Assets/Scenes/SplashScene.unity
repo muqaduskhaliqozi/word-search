@@ -344,7 +344,7 @@ MonoBehaviour:
   loadingText: {fileID: 1022402742}
   loadingWord: Loading
   barShine: {fileID: 0}
-  loadingDuration: 3.5
+  loadingDuration: 8
   nextSceneName: MainMenu
 --- !u!4 &228565560
 Transform:
