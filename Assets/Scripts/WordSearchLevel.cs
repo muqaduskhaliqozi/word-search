@@ -442,16 +442,29 @@ public class WordSearchLevel : MonoBehaviour
         Haptics.Medium();
     }
 
+    private static bool Spells(List<LetterTile> tiles, string word, bool reversed)
+    {
+        for (int i = 0; i < word.Length; i++)
+        {
+            LetterTile t = tiles[reversed ? tiles.Count - 1 - i : i];
+            if (t == null || string.IsNullOrEmpty(t.Letter) || char.ToUpperInvariant(t.Letter[0]) != word[i]) return false;
+        }
+        return true;
+    }
+
     /// <summary>The tiles that spell a word: assigned solution tiles, or found by searching the grid.</summary>
     public List<LetterTile> GetWordTiles(WordTarget target)
     {
         if (target == null) return null;
         string word = string.IsNullOrEmpty(target.TargetWord) ? "" : target.TargetWord.ToUpper();
 
+        // Stored solution tiles are only trusted when they really spell the word
+        // (some scene levels kept the tiles of their old words -> hints pointed at the wrong letters).
         List<LetterTile> sol = target.SolutionTiles;
-        if (sol != null && sol.Count > 0 && (word.Length == 0 || sol.Count == word.Length) && !sol.Contains(null))
+        if (sol != null && sol.Count > 0 && sol.Count == word.Length && !sol.Contains(null))
         {
-            return new List<LetterTile>(sol);
+            if (Spells(sol, word, false)) return new List<LetterTile>(sol);
+            if (Spells(sol, word, true)) { List<LetterTile> rev = new List<LetterTile>(sol); rev.Reverse(); return rev; }
         }
 
         if (word.Length == 0) return null;

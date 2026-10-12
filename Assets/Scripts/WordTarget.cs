@@ -164,32 +164,9 @@ public class WordTarget : MonoBehaviour
             return true;
         }
 
-        // 4. Exact solutionTiles Match (Forward or Reverse)
-        if (solutionTiles != null && solutionTiles.Count > 0 && solutionTiles.Count == selectedTiles.Count)
-        {
-            bool forwardMatch = true;
-            for (int i = 0; i < solutionTiles.Count; i++)
-            {
-                if (selectedTiles[i] != solutionTiles[i])
-                {
-                    forwardMatch = false;
-                    break;
-                }
-            }
-            if (forwardMatch) return true;
-
-            bool reverseMatch = true;
-            int count = solutionTiles.Count;
-            for (int i = 0; i < count; i++)
-            {
-                if (selectedTiles[i] != solutionTiles[count - 1 - i])
-                {
-                    reverseMatch = false;
-                    break;
-                }
-            }
-            if (reverseMatch) return true;
-        }
+        // 4. Exact solutionTiles match is NOT accepted on its own any more: several scene levels have stale
+        //    solution tiles (words were renamed), which let a swipe of unrelated letters "find" a word.
+        //    The letters must spell the word (step 3).
 
         return false;
     }
