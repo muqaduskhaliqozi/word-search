@@ -950,13 +950,13 @@ public static class SkyThemeBuilder
                 if (strike != null)
                 {
                     Image si = strike.GetComponent<Image>();
-                    if (si != null) si.color = new Color(1f, 1f, 1f, 0.9f);
+                    if (si != null) si.color = C("0B5D1E"); // bottle-green strike on the found chip
                 }
                 SetField(wt, "chipImage", chip);
                 SetField(wt, "normalSprite", S("sk_chip"));
                 SetField(wt, "foundSprite", S("sk_chip_found"));
                 SetColor(wt, "normalTextColor", C("1E6FC0"));
-                SetColor(wt, "foundTextColor", Color.white);
+                SetColor(wt, "foundTextColor", C("0B5D1E")); // bottle-green text on the found chip
                 EditorUtility.SetDirty(wt);
             }
         }
