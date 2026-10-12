@@ -156,6 +156,8 @@ public class LevelManager : MonoBehaviour
 
         LevelStarted?.Invoke(activeLevelScript);
         GameEvents.LevelStart(CurrentLevelNumber);
+        // notification permission prompt: start of level 4 (never before), once per session until decided
+        GameNotifications.OnLevelStarted(CurrentLevelNumber);
 
         Debug.Log($"[LevelManager] Active Level: {currentLevelIndex + 1} of {LevelCount} " +
                   $"(object: {currentLevel.name}, title: {activeLevelScript.LevelTitle})");
@@ -223,8 +225,6 @@ public class LevelManager : MonoBehaviour
     {
         LevelProgress.MarkCompleted(currentLevelIndex);
         GameEvents.LevelComplete(CurrentLevelNumber);
-        // ask for notification permission after a win (Android 13+ only shows the prompt a couple of times)
-        GameNotifications.RequestPermissionIfNeeded();
     }
 
     private void OnDestroy()

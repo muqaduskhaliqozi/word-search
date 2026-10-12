@@ -12,6 +12,7 @@ dependencies {
     implementation 'com.applovin.mediation:bidmachine-adapter:3.6.1.0' // Assets/MaxSdk/Mediation/BidMachine/Editor/Dependencies.xml:8
     implementation 'com.applovin.mediation:facebook-adapter:[6.18.0.0]' // Assets/MaxSdk/Mediation/Facebook/Editor/Dependencies.xml:8
     implementation 'com.applovin.mediation:fyber-adapter:8.4.5.0' // Assets/MaxSdk/Mediation/Fyber/Editor/Dependencies.xml:4
+    implementation 'com.applovin.mediation:google-ad-manager-adapter:[25.5.0.0]' // Assets/MaxSdk/Mediation/GoogleAdManager/Editor/Dependencies.xml:5
     implementation 'com.applovin.mediation:inmobi-adapter:11.2.0.0' // Assets/MaxSdk/Mediation/InMobi/Editor/Dependencies.xml:4
     implementation 'com.applovin.mediation:ironsource-adapter:9.4.0.0.0' // Assets/MaxSdk/Mediation/IronSource/Editor/Dependencies.xml:4
     implementation 'com.applovin.mediation:mintegral-adapter:17.1.51.0' // Assets/MaxSdk/Mediation/Mintegral/Editor/Dependencies.xml:8

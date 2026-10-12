@@ -8,6 +8,7 @@
     <package>com.applovin.mediation:bidmachine-adapter:3.6.1.0</package>
     <package>com.applovin.mediation:facebook-adapter:[6.18.0.0]</package>
     <package>com.applovin.mediation:fyber-adapter:8.4.5.0</package>
+    <package>com.applovin.mediation:google-ad-manager-adapter:[25.5.0.0]</package>
     <package>com.applovin.mediation:inmobi-adapter:11.2.0.0</package>
     <package>com.applovin.mediation:ironsource-adapter:9.4.0.0.0</package>
     <package>com.applovin.mediation:mintegral-adapter:17.1.51.0</package>

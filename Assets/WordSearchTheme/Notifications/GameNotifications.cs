@@ -160,8 +160,35 @@ public class GameNotifications : MonoBehaviour
 #endif
     }
 
+    /// <summary>First level whose start shows the notification permission prompt (never earlier).</summary>
+    public const int PermissionLevel = 4;
+    private static bool askedThisSession;
+
     /// <summary>
-    /// Asks for notification permission if the OS still needs it (Android 13+ / iOS). Call after a win:
+    /// Call at every level start. From level <see cref="PermissionLevel"/> on, asks once per session, after the board
+    /// has been on screen for a moment with the game in front (not behind the interstitial that can play after level 3).
+    /// </summary>
+    public static void OnLevelStarted(int levelNumber)
+    {
+        if (levelNumber < PermissionLevel || askedThisSession || instance == null) return;
+        askedThisSession = true;
+        instance.StartCoroutine(instance.AskWhenOnScreen());
+    }
+
+    private IEnumerator AskWhenOnScreen()
+    {
+        float steady = 0f;
+        while (steady < 1.2f)
+        {
+            yield return null;
+            // an ad (or any other activity) in front takes focus away: restart the wait when it closes
+            steady = Application.isFocused ? steady + Mathf.Min(Time.unscaledDeltaTime, 0.1f) : 0f;
+        }
+        RequestPermissionIfNeeded();
+    }
+
+    /// <summary>
+    /// Asks for notification permission if the OS still needs it (Android 13+ / iOS). Called via OnLevelStarted (level 4+):
     /// Android only offers the prompt a couple of times per install. No local "already asked" flag on purpose -
     /// the OS tracks the real state and the request no-ops when granted.
     /// </summary>
