@@ -65,6 +65,7 @@ public static class SkyThemeBuilder
         try
         {
             build();
+            SweepFonts(scene);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
             Debug.Log("[SkyTheme] Updated " + path);
@@ -130,19 +131,59 @@ public static class SkyThemeBuilder
 
     private static void LoadFonts()
     {
-        fredoka = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontDir + "Fredoka-Bold SDF.asset");
-        if (fredoka == null) fredoka = MakeFont("Fredoka-Bold");
-        lato = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontDir + "Lato-Bold SDF.asset");
-        if (lato == null) lato = MakeFont("Lato-Bold");
+        // Poppins Bold everywhere (titles, buttons, letters, chips, runtime panels).
+        // The old Fredoka/Lato variables keep their names so every call site switches at once.
+        fredoka = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontDir + "Poppins-Bold SDF.asset");
+        if (fredoka == null) fredoka = MakeFont("Poppins-Bold");
+        lato = fredoka;
+        SetDefaultFont(fredoka);
         if (fredoka == null) fredoka = TMP_Settings.defaultFontAsset;
         if (lato == null) lato = fredoka;
+    }
+
+    /// <summary>TMP's default font (used by any text created without an explicit font).</summary>
+    private static void SetDefaultFont(TMP_FontAsset f)
+    {
+        if (f == null || TMP_Settings.instance == null) return;
+        SerializedObject so = new SerializedObject(TMP_Settings.instance);
+        SerializedProperty p = so.FindProperty("m_defaultFontAsset");
+        if (p != null && p.objectReferenceValue != f)
+        {
+            p.objectReferenceValue = f;
+            so.ApplyModifiedProperties();
+            EditorUtility.SetDirty(TMP_Settings.instance);
+        }
+    }
+
+    /// <summary>Every TextMeshPro text in the open scene (incl. inactive / hand-placed ones) -> Poppins.</summary>
+    private static void SweepFonts(UnityEngine.SceneManagement.Scene scene)
+    {
+        if (fredoka == null) return;
+        int n = 0;
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            foreach (TMP_Text t in root.GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (t.font == fredoka) continue;
+                t.font = fredoka;
+                t.fontSharedMaterial = fredoka.material;
+                EditorUtility.SetDirty(t);
+                n++;
+            }
+        }
+        if (n > 0) Debug.Log("[SkyTheme] " + scene.name + ": switched " + n + " more text(s) to Poppins");
     }
 
     private static TMP_FontAsset MakeFont(string name)
     {
         string assetPath = FontDir + name + " SDF.asset";
         Font ttf = AssetDatabase.LoadAssetAtPath<Font>(FontDir + name + ".ttf");
-        if (ttf == null) return null;
+        if (ttf == null && File.Exists(FontDir + name + ".ttf"))
+        {
+            AssetDatabase.ImportAsset(FontDir + name + ".ttf", ImportAssetOptions.ForceSynchronousImport);
+            ttf = AssetDatabase.LoadAssetAtPath<Font>(FontDir + name + ".ttf");
+        }
+        if (ttf == null) { Debug.LogError("[SkyTheme] font not found: " + FontDir + name + ".ttf"); return null; }
         TMP_FontAsset fa = TMP_FontAsset.CreateFontAsset(ttf, 90, 9, GlyphRenderMode.SDFAA, 1024, 1024, AtlasPopulationMode.Dynamic, true);
         if (fa == null) return null;
         fa.name = name + " SDF";

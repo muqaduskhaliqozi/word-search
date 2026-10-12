@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2df46aa4c8d6a49f3bc6a844bffb6a26, type: 3}
   m_Name: SkyUIResources
   m_EditorClassIdentifier: 
-  font: {fileID: 11400000, guid: 3bb6d1c3c402e497787223a34fd9a953, type: 2}
-  buttonFont: {fileID: 11400000, guid: 536f828de22ed4151b81db6319150232, type: 2}
+  font: {fileID: 11400000, guid: 530a763dac97449bba64ee9906bdcd8f, type: 2}
+  buttonFont: {fileID: 11400000, guid: 530a763dac97449bba64ee9906bdcd8f, type: 2}
   headerCard: {fileID: 21300000, guid: 8d4360c56fea7450992012c8ee2da58f, type: 3}
   plainCard: {fileID: 21300000, guid: af0fbded538a94f8898c623a39136919, type: 3}
   greenButton: {fileID: 21300000, guid: f104564acde5842db8664b84e1de48cd, type: 3}
