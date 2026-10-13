@@ -31,6 +31,8 @@
     <package>com.reyun.solar.engine.oversea:solar-engine-core:+</package>
     <package>com.reyun.solar.engine.oversea:solar-remote-config:+</package>
     <package>com.squareup.picasso:picasso:2.71828</package>
+    <package>ru.rustore.sdk:core:10.5.0</package>
+    <package>ru.rustore.sdk:pay:11.1.0</package>
   </packages>
   <files>
     <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-analytics-unity/13.2.0/firebase-analytics-unity-13.2.0.aar</file>

@@ -35,6 +35,8 @@ dependencies {
     implementation 'com.reyun.solar.engine.oversea:solar-engine-core:+' // Assets/SolarEngineNet/Android/Editor/Dependencies.xml:8
     implementation 'com.reyun.solar.engine.oversea:solar-remote-config:+' // Assets/SolarEngineNet/SolarEnginePlugins/RemoteConfigSDK/Android/Editor/Dependencies.xml:4
     implementation 'com.squareup.picasso:picasso:2.71828' // Assets/MaxSdk/Mediation/InMobi/Editor/Dependencies.xml:5
+    implementation 'ru.rustore.sdk:core:10.5.0' // Assets/RustoreSDK/Editor/Common/CoreClientDependencies.xml:7
+    implementation 'ru.rustore.sdk:pay:11.1.0' // Assets/RustoreSDK/Editor/PayClient/PayClientDependencies.xml:7
 // Android Resolver Dependencies End
 **DEPS**}
 
