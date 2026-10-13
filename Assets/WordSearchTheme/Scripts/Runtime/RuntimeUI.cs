@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Builds the self-spawning panels (consent, no-internet, remove-ads offer) in the Sky look,
+/// Builds the self-spawning panels (consent, no-internet, power-up offer) in the Sky look,
 /// on their own sorting layer so they sit above any scene. Layout is in 1080x1920 design pixels.
 /// Backdrop stays full-bleed on the canvas; the card goes inside a SafeArea node.
 /// </summary>

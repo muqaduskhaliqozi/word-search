@@ -155,7 +155,6 @@ public class LevelManager : MonoBehaviour
         }
 
         LevelStarted?.Invoke(activeLevelScript);
-        GameEvents.LevelStart(CurrentLevelNumber);
         // notification permission prompt: start of level 4 (never before), once per session until decided
         GameNotifications.OnLevelStarted(CurrentLevelNumber);
 
@@ -188,13 +187,8 @@ public class LevelManager : MonoBehaviour
         }
 
         // Post-level slot (win path only - Next exists only on the Level Complete panel).
-        // Review is checked OUTSIDE the ad gate so an ad cooldown can never swallow a review milestone.
-        int completedLevel = CurrentLevelNumber;
-        bool reviewTookTheSlot = StoreReview.TryRequestInsteadOfAd(completedLevel);
-        if (!reviewTookTheSlot && AdGate.AllowInterstitial(completedLevel) && MediationHandler.Instance != null)
-        {
-            MediationHandler.Instance.ShowInterstitial();
-        }
+        // The build is ad-free, so the slot belongs to the store review prompt alone.
+        StoreReview.RequestAfterWin(CurrentLevelNumber);
 
         int nextIndex = currentLevelIndex + 1;
 
@@ -224,7 +218,6 @@ public class LevelManager : MonoBehaviour
     private void OnActiveLevelCompleted()
     {
         LevelProgress.MarkCompleted(currentLevelIndex);
-        GameEvents.LevelComplete(CurrentLevelNumber);
     }
 
     private void OnDestroy()

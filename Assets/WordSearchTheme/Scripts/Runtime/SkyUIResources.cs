@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// Art + fonts for panels that build themselves at runtime (consent, no-internet, remove-ads offer).
+/// Art + fonts for panels that build themselves at runtime (consent, no-internet, power-up offer).
 /// Lives at Assets/WordSearchTheme/Resources/SkyUIResources.asset - filled by Tools > Word Search > Apply Sky Theme.
 /// </summary>
 public class SkyUIResources : ScriptableObject

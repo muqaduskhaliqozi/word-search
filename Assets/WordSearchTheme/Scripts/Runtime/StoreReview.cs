@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Native store review (Google Play In-App Review / iOS SKStoreReviewController) after milestone levels,
-/// taking the post-level interstitial slot. Neither store says whether a dialog was shown (both rate-limit
+/// in the post-level slot (after Next on the Level Complete panel). Neither store says whether a dialog was shown (both rate-limit
 /// hard), so this is a request, never an event. Nothing appears in the Editor.
 /// Android: Google's Play In-App Review library (com.google.android.play:review, declared in
 /// WordSearchTheme/Editor/ReviewDependencies.xml and pulled in by External Dependency Manager), called over JNI.
@@ -17,7 +17,6 @@ public class StoreReview : MonoBehaviour
     [SerializeField] private float delaySeconds = 0.4f;
 
     private const string LastLevelKey = "WS_ReviewLastLevel";
-    private const string AdSkipUsedKey = "WS_ReviewAdSkipUsed";
 
     private static StoreReview instance;
     private bool inFlight;
@@ -40,31 +39,23 @@ public class StoreReview : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Call right after a WIN, before showing the post-level interstitial.
-    /// Returns true when the ad should be skipped (only on the first genuine attempt; later milestones
-    /// still ask but let the ad through, because a quota-blocked prompt would otherwise leave neither).
-    /// </summary>
-    public static bool TryRequestInsteadOfAd(int completedLevel) => Instance.TryRequest(completedLevel);
+    /// <summary>Call right after a WIN. Requests the review once each milestone level is reached.</summary>
+    public static void RequestAfterWin(int completedLevel) => Instance.TryRequest(completedLevel);
 
-    private bool TryRequest(int level)
+    private void TryRequest(int level)
     {
-        if (inFlight) return false;
+        if (inFlight) return;
         int lastAsked = PlayerPrefs.GetInt(LastLevelKey, 0);
         int milestone = 0;
         foreach (int m in reviewAfterLevels)
             if (level >= m && m > lastAsked && m > milestone) milestone = m; // replays never re-trigger
-        if (milestone == 0) return false;
+        if (milestone == 0) return;
 
         PlayerPrefs.SetInt(LastLevelKey, milestone);
-        bool skipAd = PlayerPrefs.GetInt(AdSkipUsedKey, 0) == 0;
-        if (skipAd) PlayerPrefs.SetInt(AdSkipUsedKey, 1);
         PlayerPrefs.Save();
 
-        Debug.Log($"[Review] milestone {milestone} reached at level {level} - requesting review (ad skipped: {skipAd})");
-        GameEvents.ReviewRequested(level);
+        Debug.Log($"[Review] milestone {milestone} reached at level {level} - requesting review");
         StartCoroutine(RequestRoutine());
-        return skipAd;
     }
 
     private IEnumerator RequestRoutine()
@@ -129,7 +120,7 @@ public class StoreReview : MonoBehaviour
     [UnityEditor.MenuItem("Tools/Word Search/Store Review/Reset Review State")]
     private static void ResetState()
     {
-        PlayerPrefs.DeleteKey(LastLevelKey); PlayerPrefs.DeleteKey(AdSkipUsedKey); PlayerPrefs.Save();
+        PlayerPrefs.DeleteKey(LastLevelKey); PlayerPrefs.Save();
         Debug.Log("[Review] state reset");
     }
 #endif

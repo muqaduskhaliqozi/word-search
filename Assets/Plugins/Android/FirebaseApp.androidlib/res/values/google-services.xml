@@ -1,9 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/gcm_defaultSenderId,@string/google_storage_bucket,@string/project_id,@string/google_api_key,@string/google_crash_reporting_api_key,@string/google_app_id">
-  <string name="gcm_defaultSenderId" translatable="false">391803767720</string>
-  <string name="google_storage_bucket" translatable="false">apex-slime-rng.firebasestorage.app</string>
-  <string name="project_id" translatable="false">apex-slime-rng</string>
-  <string name="google_api_key" translatable="false">AIzaSyCyquiN5dlooWjG5rXw-xNkOEta17MGpZA</string>
-  <string name="google_crash_reporting_api_key" translatable="false">AIzaSyCyquiN5dlooWjG5rXw-xNkOEta17MGpZA</string>
-  <string name="google_app_id" translatable="false">1:391803767720:android:cc7ffa6fa6eaaa83602b9d</string>
-</resources>

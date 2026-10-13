@@ -3,8 +3,8 @@ using UnityEngine;
 
 /// <summary>
 /// First-launch Welcome panel with Terms of Service / Privacy Policy links and an Accept button.
-/// Nothing that tracks the player (ads mediation, SolarEngine, Firebase, ByteBrew, IAP) starts until Accept;
-/// those initializers call ConsentGate.RunWhenAccepted(...) instead of starting directly.
+/// It is the store-required Terms/Privacy acceptance, not ad infrastructure: the build is ad-free and has no
+/// analytics SDKs any more. Code that must wait for acceptance calls ConsentGate.RunWhenAccepted(...).
 /// After the first Accept the panel never appears again and startup is unchanged.
 /// Note: a Terms acknowledgement, not a full GDPR consent flow (there is no decline path).
 /// </summary>
@@ -95,7 +95,7 @@ public class ConsentGate : MonoBehaviour
     {
         PlayerPrefs.SetInt(AcceptedKey, 1);
         PlayerPrefs.Save();
-        Debug.Log("[ConsentGate] accepted - starting SDKs");
+        Debug.Log("[ConsentGate] accepted");
         Action run = waiting;
         waiting = null;
         if (panel != null && panel.root != null) Destroy(panel.root);

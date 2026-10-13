@@ -12,7 +12,6 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
@@ -37,6 +36,30 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- RuStore Pay: the payment returns to the game through this deeplink.
+             Same entries the RuStore PayClient settings "Patch" button writes; the @string values are
+             generated at build time from Assets/RustoreSDK/Editor/PayClientSettings.asset. -->
+        <activity
+                android:name="ru.rustore.unitysdk.RuStoreDeeplinkActivityDefault"
+                android:theme="@android:style/Theme.NoDisplay"
+                android:exported="true" >
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="@string/rustore_PayClientSettings_deeplinkScheme" />
+            </intent-filter>
+        </activity>
+
+        <meta-data
+                android:name="console_app_id_value"
+                android:value="@string/rustore_PayClientSettings_consoleApplicationId" />
+        <meta-data
+                android:name="internal_config_key"
+                android:value="@string/rustore_PayClientSettings_internalConfigKey" />
+        <meta-data
+                android:name="sdk_pay_scheme_value"
+                android:value="@string/rustore_PayClientSettings_deeplinkScheme" />
     </application>
 
 </manifest>

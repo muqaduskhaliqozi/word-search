@@ -13,23 +13,7 @@ MonoBehaviour:
   m_Name: RuStoreProductConfig
   m_EditorClassIdentifier: 
   products:
-  - productId: com.antcolony.coinpack1
+  - productId: com.dss.word.puzzle.game.hints3
     type: 0
-  - productId: com.antcolony.coinpack2
-    type: 0
-  - productId: com.antcolony.coinpack3
-    type: 0
-  - productId: com.antcolony.coinpack4
-    type: 0
-  - productId: com.antcolony.coinpack5
-    type: 0
-  - productId: com.antcolony.coinpack6
-    type: 0
-  - productId: com.antcolony.classicpack
-    type: 0
-  - productId: com.antcolony.extraslot3
-    type: 0
-  - productId: com.antcolony.evict3
-    type: 0
-  - productId: com.antcolony.shuffle3
+  - productId: com.dss.word.puzzle.game.shuffles3
     type: 0

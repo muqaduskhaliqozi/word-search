@@ -550,8 +550,6 @@ public static class SkyThemeBuilder
         SetField(sky, "settingsScreen", sr.screen);
         SetField(sky, "settingsBackButton", sr.back);
         SetField(sky, "removeAdsCard", sr.adsCard);
-        SetField(sky, "removeAdsBuyButton", sr.buy);
-        SetField(sky, "priceText", sr.price);
         SetField(sky, "soundToggle", sr.sound);
         SetField(sky, "musicToggle", sr.music);
         SetField(sky, "vibrateToggle", sr.vibrate);
@@ -917,7 +915,7 @@ public static class SkyThemeBuilder
         SetField(h, "shuffleBadge", shuffleBadge);
         SetField(h, "shuffleBadgeText", shuffleCount);
         SetColor(h, "badgeCountColor", C("1565D8"));
-        SetColor(h, "badgeAdColor", C("4CAF1A"));
+        SetColor(h, "badgeEmptyColor", C("4CAF1A"));
         SetField(h, "settingsPopup", settingsPopup);
         SetField(h, "settingsCloseButton", sClose);
         SetField(h, "settingsHomeButton", sHome);

@@ -4,14 +4,14 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// "Connecting to store" panel shown from the moment a Remove Ads button is tapped until the store answers:
+/// "Connecting to store" panel shown from the moment a power-up Buy button is tapped until RuStore answers:
 /// bought, cancelled, failed, or not reachable. Blocks taps underneath so the button can't be spammed.
-/// Safety nets: closes a few seconds after returning from the Google Play sheet even if no callback arrived,
+/// Safety nets: closes a few seconds after returning from the RuStore payment screen even if no callback arrived,
 /// and after <see cref="TimeoutSeconds"/> of waiting in the app with no store response.
 /// </summary>
 public class IAPLoading : MonoBehaviour
 {
-    public const int SortingOrder = 30500;     // above the Remove Ads offer (30000), below no-internet (31000)
+    public const int SortingOrder = 30500;     // above the power-up offer (30000), below no-internet (31000)
     public const float TimeoutSeconds = 25f;   // in-app time without any store response
     public const float AfterReturnSeconds = 4f; // back from the payment sheet without a callback
 
@@ -68,7 +68,7 @@ public class IAPLoading : MonoBehaviour
     private void Update()
     {
         if (spinner != null) spinner.Rotate(0f, 0f, 360f * Time.unscaledDeltaTime) /* counter-clockwise: the bright head leads */;
-        if (leftApp) return; // the Google Play sheet is up: wait for it, however long the player takes
+        if (leftApp) return; // the RuStore payment screen is up: wait for it, however long the player takes
         waited += Mathf.Min(Time.unscaledDeltaTime, 0.1f);
         if (waited >= TimeoutSeconds)
         {

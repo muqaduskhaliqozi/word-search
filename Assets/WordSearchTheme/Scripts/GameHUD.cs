@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using TMPro;
 
@@ -24,28 +25,26 @@ public class GameHUD : MonoBehaviour
 
     [Header("Coins")]
     [SerializeField] private TMP_Text coinText;
-    [Tooltip("Buttons that offer coins for watching a rewarded video (the + on the coin bar, the shop bag).")]
+    [Tooltip("Ad-free build: these used to play a rewarded video for coins, so they are always hidden. " +
+             "Kept as fields only so the theme builder can still wire them.")]
     [SerializeField] private Button[] getCoinsButtons;
     [SerializeField] private RectTransform coinBar;
+    [Tooltip("Ad-free build: there is nothing to remove, so the No-Ads badge is always hidden.")]
     [SerializeField] private Button noAdsButton;
     [SerializeField] private TMP_Text levelRewardText;
     [SerializeField] private bool hintsCostCoins = false;
     [SerializeField] private int hintCost = 50;
     [SerializeField] private int coinsPerLevel = 25;
-    [SerializeField] private int rewardedVideoCoins = 100;
 
-    [Header("Power-ups: free uses, then a rewarded ad refills them")]
-    [SerializeField] private int freeUses = 3;
+    [Header("Power-ups: free uses (PowerUpStore.FreeUses), then an in-app purchase refills them")]
     [SerializeField] private Image hintBadge;
     [SerializeField] private TMP_Text hintBadgeText;
     [SerializeField] private Image shuffleBadge;
     [SerializeField] private TMP_Text shuffleBadgeText;
     [SerializeField] private Color badgeCountColor = new Color(0.08f, 0.40f, 0.85f, 1f);
-    [SerializeField] private Color badgeAdColor = new Color(0.30f, 0.69f, 0.10f, 1f);
-
-    public const string HintUsesKey = "WS_Power_Hint";
-    public const string ShuffleUsesKey = "WS_Power_Shuffle";
-    private volatile string pendingRefill; // set from the ad callback, applied on the main thread
+    [Tooltip("Badge colour at zero charges, when the badge reads '+' (tap = buy more).")]
+    [FormerlySerializedAs("badgeAdColor")]
+    [SerializeField] private Color badgeEmptyColor = new Color(0.30f, 0.69f, 0.10f, 1f);
 
     [Header("Boosters")]
     [SerializeField] private Button[] hintButtons;
@@ -115,11 +114,13 @@ public class GameHUD : MonoBehaviour
         if (soundButton != null) soundButton.onClick.AddListener(ToggleSound);
         if (musicButton != null) musicButton.onClick.AddListener(() => { GameSettings.MusicOn = !GameSettings.MusicOn; RefreshSound(); });
         if (vibrateButton != null) vibrateButton.onClick.AddListener(() => { GameSettings.VibrateOn = !GameSettings.VibrateOn; RefreshSound(); GameSettings.Vibrate(); });
+        // Ad-free build: no rewarded coins and nothing to remove - hide those buttons rather than leave them dead.
         if (getCoinsButtons != null)
-            foreach (Button b in getCoinsButtons) if (b != null) b.onClick.AddListener(GetCoins);
-        if (noAdsButton != null) noAdsButton.onClick.AddListener(SkyMenu.RequestRemoveAds);
+            foreach (Button b in getCoinsButtons) if (b != null) b.gameObject.SetActive(false);
+        if (noAdsButton != null) noAdsButton.gameObject.SetActive(false);
         if (levelRewardText != null) levelRewardText.text = "+" + coinsPerLevel;
         GameSettings.Changed += RefreshCoins;
+        PowerUpStore.ChargesChanged += OnChargesChanged;
         RefreshCoins();
         RefreshPowers();
 
@@ -171,30 +172,13 @@ public class GameHUD : MonoBehaviour
     private void OnDestroy()
     {
         GameSettings.Changed -= RefreshCoins;
+        PowerUpStore.ChargesChanged -= OnChargesChanged;
     }
 
     // ------------------------------------------------------------------ coins
     private void RefreshCoins()
     {
         if (coinText != null) coinText.text = GameSettings.Coins.ToString("N0");
-        if (noAdsButton != null) noAdsButton.gameObject.SetActive(!GameSettings.AdsRemoved);
-    }
-
-    /// <summary>Rewarded video for coins (uses the project's MediationHandler / AppLovin MAX).</summary>
-    private void GetCoins()
-    {
-        MediationHandler ads = MediationHandler.Instance;
-        bool ready = false;
-        try { ready = ads != null && ads.IsRewardedAdReady(); } catch (System.Exception) { ready = false; }
-        if (!ready)
-        {
-            if (ads != null) { try { ads.LoadRewardedVideo(); } catch (System.Exception) { } }
-            Toast.Show(Toast.VideoUnavailable); // never a silently dead button
-            SfxPlayer.Play(SfxPlayer.Sfx.Wrong);
-            if (coinBar != null) StartCoroutine(Shake(coinBar));
-            return;
-        }
-        ads.ShowRewardedVideo(() => GameSettings.Coins += rewardedVideoCoins);
     }
 
     private void OnAllLevelsCompleted()
@@ -238,43 +222,50 @@ public class GameHUD : MonoBehaviour
         levelBanner.localScale = Vector3.one;
     }
 
-    // ------------------------------------------------------------------ power-up uses
-    private int Uses(string key) => PlayerPrefs.GetInt(key, freeUses);
-
-    private void SetUses(string key, int value)
-    {
-        PlayerPrefs.SetInt(key, Mathf.Max(0, value));
-        PlayerPrefs.Save();
-        RefreshPowers();
-    }
-
+    // ------------------------------------------------------------------ power-up charges
     private void RefreshPowers()
     {
-        SetBadge(hintBadge, hintBadgeText, Uses(HintUsesKey));
-        SetBadge(shuffleBadge, shuffleBadgeText, Uses(ShuffleUsesKey));
+        SetBadge(hintBadge, hintBadgeText, PowerUpStore.Charges(PowerUpStore.PowerUp.Hint));
+        SetBadge(shuffleBadge, shuffleBadgeText, PowerUpStore.Charges(PowerUpStore.PowerUp.Shuffle));
     }
 
+    /// <summary>At zero the badge reads "+" (tap = get more); the button stays interactable.</summary>
     private void SetBadge(Image badge, TMP_Text text, int uses)
     {
-        if (badge != null) badge.color = uses > 0 ? badgeCountColor : badgeAdColor;
-        if (text != null) text.text = uses > 0 ? uses.ToString() : "AD";
+        if (badge != null) badge.color = uses > 0 ? badgeCountColor : badgeEmptyColor;
+        if (text != null) text.text = uses > 0 ? uses.ToString() : "+";
     }
 
-    /// <summary>Out of free uses: play a rewarded ad; only a completed ad refills the power-up.</summary>
-    private void WatchAdToRefill(string key, Transform source)
+    /// <summary>
+    /// Charges changed - spent here, or bought (possibly a purchase recovered from an earlier session).
+    /// A grant (count went up) gets the little celebration the ad refill used to get.
+    /// </summary>
+    private void OnChargesChanged(PowerUpStore.PowerUp which, int now)
     {
-        MediationHandler ads = MediationHandler.Instance;
-        bool ready = false;
-        try { ready = ads != null && ads.IsRewardedAdReady(); } catch (System.Exception) { ready = false; }
-        if (!ready)
-        {
-            if (ads != null) { try { ads.LoadRewardedVideo(); } catch (System.Exception) { } }
-            Toast.Show(Toast.VideoUnavailable); // never a silently dead button
-            SfxPlayer.Play(SfxPlayer.Sfx.Wrong);
-            if (source != null) StartCoroutine(Shake(source));
-            return;
-        }
-        ads.ShowRewardedVideo(() => pendingRefill = key);
+        int shown = ParseBadge(which == PowerUpStore.PowerUp.Hint ? hintBadgeText : shuffleBadgeText);
+        RefreshPowers();
+        if (now <= shown) return;
+        SfxPlayer.Play(SfxPlayer.Sfx.Star);
+        Image badge = which == PowerUpStore.PowerUp.Hint ? hintBadge : shuffleBadge;
+        if (badge != null && isActiveAndEnabled) StartCoroutine(Punch(badge.transform));
+    }
+
+    private static int ParseBadge(TMP_Text t) => t != null && int.TryParse(t.text, out int n) ? n : 0;
+
+    /// <summary>Out of charges: offer the in-app purchase, showing the icon of the button that was tapped.</summary>
+    private void OfferRefill(PowerUpStore.PowerUp which, Button source)
+    {
+        SfxPlayer.Play(SfxPlayer.Sfx.Popup);
+        PowerUpOfferPanel.Show(which, IconOf(source));
+    }
+
+    private static Sprite IconOf(Button b)
+    {
+        if (b == null) return null;
+        Transform icon = b.transform.Find("Icon");
+        Image img = icon != null ? icon.GetComponent<Image>() : null;
+        if (img == null || img.sprite == null) img = b.targetGraphic as Image;
+        return img != null ? img.sprite : null;
     }
 
     private GameObject completePanel;
@@ -286,7 +277,7 @@ public class GameHUD : MonoBehaviour
     private void HandleBackKey()
     {
         if (!Input.GetKeyDown(KeyCode.Escape)) return;
-        if (Modals.AnyOpen) return;                                     // consent / no-internet / offer own it
+        if (Modals.AnyOpen) return;                                     // consent / no-internet / power-up offer own it
         if (settingsPopup != null && settingsPopup.gameObject.activeSelf) { CloseSettings(); return; }
         if (completePanel == null) { Transform t = transform.Find("LevelCompletePanel"); if (t != null) completePanel = t.gameObject; }
         if (completePanel != null && completePanel.activeInHierarchy) return; // use Next; don't leave mid-celebration
@@ -298,13 +289,6 @@ public class GameHUD : MonoBehaviour
     private void Update()
     {
         HandleBackKey();
-        string key = pendingRefill;
-        if (key == null) return;
-        pendingRefill = null;
-        SetUses(key, freeUses);
-        SfxPlayer.Play(SfxPlayer.Sfx.Star);
-        Image badge = key == HintUsesKey ? hintBadge : shuffleBadge;
-        if (badge != null) StartCoroutine(Punch(badge.transform));
     }
 
     // ------------------------------------------------------------------ boosters
@@ -314,15 +298,14 @@ public class GameHUD : MonoBehaviour
         if (level == null) return;
         if (Tutorial.Active) { if (source != null) StartCoroutine(Shake(source.transform)); return; } // boosters unlock after the tutorial
 
-        if (Uses(HintUsesKey) <= 0)
+        if (PowerUpStore.Charges(PowerUpStore.PowerUp.Hint) <= 0)
         {
-            WatchAdToRefill(HintUsesKey, source != null ? source.transform : null);
+            OfferRefill(PowerUpStore.PowerUp.Hint, source);
             return;
         }
         if (level.UseHint())
         {
-            SetUses(HintUsesKey, Uses(HintUsesKey) - 1);
-            GameEvents.PowerUpUsed("hint");
+            PowerUpStore.TrySpend(PowerUpStore.PowerUp.Hint);
             if (hintBadge != null) StartCoroutine(Punch(hintBadge.transform));
         }
     }
@@ -332,14 +315,13 @@ public class GameHUD : MonoBehaviour
         WordSearchLevel level = levelManager != null ? levelManager.ActiveLevel : null;
         if (level == null) return;
         if (Tutorial.Active) { if (shuffleButton != null) StartCoroutine(Shake(shuffleButton.transform)); return; }
-        if (Uses(ShuffleUsesKey) <= 0)
+        if (PowerUpStore.Charges(PowerUpStore.PowerUp.Shuffle) <= 0)
         {
-            WatchAdToRefill(ShuffleUsesKey, shuffleButton != null ? shuffleButton.transform : null);
+            OfferRefill(PowerUpStore.PowerUp.Shuffle, shuffleButton);
             return;
         }
         level.ShuffleWordList();
-        SetUses(ShuffleUsesKey, Uses(ShuffleUsesKey) - 1);
-        GameEvents.PowerUpUsed("shuffle");
+        PowerUpStore.TrySpend(PowerUpStore.PowerUp.Shuffle);
         if (shuffleButton != null)
         {
             Transform icon = shuffleButton.transform.Find("Icon");

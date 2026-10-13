@@ -34,7 +34,7 @@ public static class BuildSizeSettings
         SetCustomProguard(true);
         AssetDatabase.SaveAssets();
         Debug.Log("[BuildSize] Android: IL2CPP code generation = Optimize Size, Minify Release (R8) = ON, " +
-                  "custom proguard-user.txt = ON. Test ads, IAP, review, notifications and ByteBrew on a device.");
+                  "custom proguard-user.txt = ON. Test RuStore purchases, review and notifications on a device.");
     }
 
     [MenuItem("Tools/Word Search/Build Size/Revert Minify (if a release build misbehaves)")]

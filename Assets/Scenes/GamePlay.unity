@@ -292297,14 +292297,12 @@ MonoBehaviour:
   hintsCostCoins: 1
   hintCost: 50
   coinsPerLevel: 25
-  rewardedVideoCoins: 100
-  freeUses: 3
   hintBadge: {fileID: 1865943135}
   hintBadgeText: {fileID: 1491885665}
   shuffleBadge: {fileID: 798796408}
   shuffleBadgeText: {fileID: 90361754}
   badgeCountColor: {r: 0.08235294, g: 0.39607844, b: 0.84705883, a: 1}
-  badgeAdColor: {r: 0.29803923, g: 0.6862745, b: 0.101960786, a: 1}
+  badgeEmptyColor: {r: 0.29803923, g: 0.6862745, b: 0.101960786, a: 1}
   hintButtons:
   - {fileID: 1957950099}
   hintCountTexts: []
@@ -626976,7 +626974,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1678433354
 RectTransform:
   m_ObjectHideFlags: 0

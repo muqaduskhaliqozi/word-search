@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" android:installLocation="preferExternal">
-  <!-- tools:replace settles the allowBackup clash between unityLibrary (true) and ByteBrew's library (false) -->
+  <!-- tools:replace keeps allowBackup=true even if a library manifest declares false -->
   <application android:label="@string/app_name" android:icon="@mipmap/app_icon"
                android:allowBackup="true"
                tools:replace="android:allowBackup" />

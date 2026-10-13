@@ -3,8 +3,6 @@ using UnityEngine;
 /// <summary>Native Android toast ("that didn't work" messages). Editor/iOS: logs instead.</summary>
 public static class Toast
 {
-    public const string VideoUnavailable = "Video not available right now. Please try again.";
-
 #if UNITY_ANDROID && !UNITY_EDITOR
     private static AndroidJavaObject activity; // never disposed on purpose: the runnable runs later on the UI thread
 #endif

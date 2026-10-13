@@ -6,7 +6,7 @@ using UnityEngine;
 /// covers the screen when it drops and hides itself when the signal returns.
 /// NOTE: Application.internetReachability only says a network interface exists - captive portals
 /// read as online, and a VPN can keep it "online" with wifi off. Use the Simulate Offline menu to test.
-/// Sorting 31000: above the game and the remove-ads offer, below the consent gate (32000).
+/// Sorting 31000: above the game and the power-up offer, below the consent gate (32000).
 /// adb logcat -s Unity | grep NoInternet
 /// </summary>
 public class NoInternetPanel : MonoBehaviour

@@ -2522,7 +2522,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &447553881
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3502,7 +3502,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &683736688
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6803,9 +6803,6 @@ MonoBehaviour:
   settingsScreen: {fileID: 630553889}
   settingsBackButton: {fileID: 2001150252}
   removeAdsCard: {fileID: 683736687}
-  removeAdsBuyButton: {fileID: 117449991}
-  priceText: {fileID: 1643805645}
-  price: 'Rs: 2990'
   soundToggle: {fileID: 918805700}
   musicToggle: {fileID: 1527269235}
   vibrateToggle: {fileID: 388156267}
@@ -6816,9 +6813,6 @@ MonoBehaviour:
   privacyPolicyUrl: https://example.com/privacy
   termsUrl: https://example.com/terms
   moreGamesUrl: https://play.google.com/store/apps/developer?id=YOUR_DEV_NAME
-  onRemoveAdsClicked:
-    m_PersistentCalls:
-      m_Calls: []
   onLeaderboardClicked:
     m_PersistentCalls:
       m_Calls: []
