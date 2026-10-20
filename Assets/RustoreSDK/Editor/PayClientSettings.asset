@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PayClientSettings
   m_EditorClassIdentifier: 
   schemeVersion: 1
-  consoleApplicationId: 
+  consoleApplicationId: 2063772326
   deeplinkScheme: dsswordpuzzlegamepay
   customMainActivityClass: com.unity3d.player.UnityPlayerActivity
   unityMainActivityClass: com.unity3d.player.UnityPlayerActivity

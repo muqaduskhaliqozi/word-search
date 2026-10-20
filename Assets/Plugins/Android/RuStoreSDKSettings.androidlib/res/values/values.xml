@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rustore_PayClientSettings_schemeVersion" translatable="false">1</string>
+    <string name="rustore_PayClientSettings_consoleApplicationId" translatable="false">2063772326</string>
+    <string name="rustore_PayClientSettings_internalConfigKey" translatable="false">unity</string>
+    <string name="rustore_PayClientSettings_deeplinkScheme" translatable="false">dsswordpuzzlegamepay</string>
+    <string name="rustore_PayClientSettings_customMainActivityClass" translatable="false">com.unity3d.player.UnityPlayerActivity</string>
+    <string name="rustore_PayClientSettings_unityMainActivityClass" translatable="false">com.unity3d.player.UnityPlayerActivity</string>
+    <string name="rustore_PayClientSettings_customDeeplinkActivityClass" translatable="false">ru.rustore.unitysdk.RuStoreDeeplinkActivityDefault</string>
+    <string name="rustore_PayClientSettings_rustoreDeeplinkActivityClass" translatable="false">ru.rustore.unitysdk.RuStoreDeeplinkActivityDefault</string>
+
+</resources>
